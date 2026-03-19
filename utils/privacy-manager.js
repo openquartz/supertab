@@ -5,6 +5,8 @@ class PrivacyManager {
   }
 
   async initializeEncryption() {
+    // Generate AES-GCM 256-bit encryption key for secure note storage
+    // AES-GCM provides both confidentiality and integrity protection
     try {
       this.encryptionKey = await crypto.subtle.generateKey(
         { name: "AES-GCM", length: 256 },
@@ -12,7 +14,7 @@ class PrivacyManager {
         ["encrypt", "decrypt"]
       );
     } catch (error) {
-      console.error('Failed to initialize encryption:', error);
+      console.error('Encryption initialization failed');
       throw new Error('Encryption initialization failed');
     }
   }
@@ -38,8 +40,8 @@ class PrivacyManager {
 
       return btoa(String.fromCharCode(...result));
     } catch (error) {
-      console.error('Encryption failed:', error);
-      return note; // Return original if encryption fails
+      console.error('Encryption operation failed');
+      return ''; // Return empty string to prevent data leakage
     }
   }
 
@@ -63,13 +65,13 @@ class PrivacyManager {
       const decoder = new TextDecoder();
       return decoder.decode(decrypted);
     } catch (error) {
-      console.error('Decryption failed:', error);
-      return encryptedNote; // Return original if decryption fails
+      console.error('Decryption operation failed');
+      return ''; // Return empty string to prevent data leakage
     }
   }
 
   shouldExcludeTab(url, excludeDomains) {
-    if (!url || !excludeDomains || excludeDomains.length === 0) {
+    if (!url || !excludeDomains || !Array.isArray(excludeDomains) || excludeDomains.length === 0) {
       return false;
     }
 
@@ -86,7 +88,7 @@ class PrivacyManager {
       const urlObj = new URL(url);
       return urlObj.hostname;
     } catch (error) {
-      console.error('Invalid URL for domain extraction:', url);
+      console.error('Invalid URL for domain extraction');
       return null;
     }
   }
