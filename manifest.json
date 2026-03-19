@@ -1,0 +1,36 @@
+{
+  "manifest_version": 3,
+  "name": "TabFlow",
+  "version": "1.0.0",
+  "description": "Professional Chrome tab management with smart grouping, notes, and batch operations",
+  "permissions": [
+    "tabs",
+    "storage",
+    "sidePanel",
+    "contextMenus"
+  ],
+  "host_permissions": [
+    "<all_urls>"
+  ],
+  "background": {
+    "service_worker": "background/service-worker.js"
+  },
+  "side_panel": {
+    "default_path": "ui/sidebar/sidebar.html"
+  },
+  "action": {
+    "default_title": "Open TabFlow",
+    "default_icon": {
+      "16": "assets/icons/icon-16.png",
+      "32": "assets/icons/icon-32.png",
+      "48": "assets/icons/icon-48.png",
+      "128": "assets/icons/icon-128.png"
+    }
+  },
+  "icons": {
+    "16": "assets/icons/icon-16.png",
+    "32": "assets/icons/icon-32.png",
+    "48": "assets/icons/icon-48.png",
+    "128": "assets/icons/icon-128.png"
+  }
+}
