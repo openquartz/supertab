@@ -1,0 +1,250 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SuperTab Status Bar Demo</title>
+    <link rel="stylesheet" href="status-bar.css">
+    <style>
+        body {
+            margin: 0;
+            padding: 20px;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            color: white;
+        }
+
+        .demo-container {
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 40px 20px;
+            text-align: center;
+        }
+
+        h1 {
+            font-size: 3rem;
+            margin-bottom: 20px;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
+        }
+
+        .description {
+            font-size: 1.2rem;
+            margin-bottom: 40px;
+            opacity: 0.9;
+            line-height: 1.6;
+        }
+
+        .controls {
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 12px;
+            padding: 30px;
+            margin: 30px 0;
+            backdrop-filter: blur(10px);
+        }
+
+        .control-group {
+            margin-bottom: 20px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+        }
+
+        input, select, button {
+            padding: 10px 15px;
+            border: none;
+            border-radius: 6px;
+            background: rgba(255, 255, 255, 0.2);
+            color: white;
+            font-size: 14px;
+            width: 200px;
+        }
+
+        input::placeholder {
+            color: rgba(255, 255, 255, 0.7);
+        }
+
+        button {
+            background: #007AFF;
+            cursor: pointer;
+            transition: background 0.3s ease;
+            width: auto;
+            margin: 5px;
+        }
+
+        button:hover {
+            background: #0056CC;
+        }
+
+        .feature-list {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+            margin: 40px 0;
+        }
+
+        .feature-item {
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 12px;
+            padding: 20px;
+            backdrop-filter: blur(10px);
+        }
+
+        .feature-item h3 {
+            margin-top: 0;
+            color: #FFD700;
+        }
+
+        .feature-item p {
+            margin-bottom: 0;
+            opacity: 0.9;
+        }
+
+        .footer {
+            margin-top: 60px;
+            padding: 20px;
+            background: rgba(0, 0, 0, 0.3);
+            border-radius: 12px;
+            text-align: center;
+        }
+
+        .footer a {
+            color: #FFD700;
+            text-decoration: none;
+        }
+
+        .footer a:hover {
+            text-decoration: underline;
+        }
+    </style>
+</head>
+<body>
+    <div class="demo-container">
+        <h1>🚀 SuperTab Status Bar</h1>
+        <p class="description">
+            实时显示AI模型状态、会话进度、内存使用情况等关键信息的常驻状态栏组件
+        </p>
+
+        <div class="controls">
+            <h2>🎮 控制面板</h2>
+
+            <div class="control-group">
+                <label for="model-select">选择模型:</label>
+                <select id="model-select">
+                    <option value="claude-opus-4-6">Claude Opus 4.6</option>
+                    <option value="claude-sonnet-4-6">Claude Sonnet 4.6</option>
+                    <option value="claude-haiku-4-5">Claude Haiku 4.5</option>
+                    <option value="gpt-4">GPT-4</option>
+                    <option value="gpt-3.5-turbo">GPT-3.5 Turbo</option>
+                </select>
+            </div>
+
+            <div class="control-group">
+                <label for="session-input">会话使用量 (tokens):</label>
+                <input type="number" id="session-input" value="25000" min="0" max="100000">
+            </div>
+
+            <div class="control-group">
+                <label for="memory-input">内存使用率 (%):</label>
+                <input type="range" id="memory-input" min="0" max="100" value="45">
+            </div>
+
+            <div class="control-group">
+                <label for="connection-select">连接状态:</label>
+                <select id="connection-select">
+                    <option value="connected">已连接</option>
+                    <option value="connecting">连接中</option>
+                    <option value="disconnected">已断开</option>
+                </select>
+            </div>
+
+            <div class="control-group">
+                <button id="apply-btn">应用设置</button>
+                <button id="toggle-btn">切换显示/隐藏</button>
+                <button id="compact-btn">切换紧凑模式</button>
+            </div>
+        </div>
+
+        <div class="feature-list">
+            <div class="feature-item">
+                <h3>🧠 模型指示器</h3>
+                <p>实时显示当前使用的AI模型，带状态指示点</p>
+            </div>
+
+            <div class="feature-item">
+                <h3>📊 会话进度条</h3>
+                <p>可视化显示会话使用量，颜色编码预警</p>
+            </div>
+
+            <div class="feature-item">
+                <h3>💾 内存监控</h3>
+                <p>实时显示内存使用情况，防止溢出</p>
+            </div>
+
+            <div class="feature-item">
+                <h3>🌐 连接状态</h3>
+                <p>显示网络连接状态，确保服务可用性</p>
+            </div>
+
+            <div class="feature-item">
+                <h3>🎨 毛玻璃效果</h3>
+                <p>现代化UI设计，支持深色模式</p>
+            </div>
+
+            <div class="feature-item">
+                <h3>📱 响应式设计</h3>
+                <p>适配各种屏幕尺寸，移动端优化</p>
+            </div>
+        </div>
+
+        <div class="footer">
+            <p>SuperTab Status Bar - 专业的AI助手状态监控组件</p>
+            <p>访问 <a href="https://github.com/openquartz/supertab" target="_blank">GitHub仓库</a> 获取更多详情</p>
+        </div>
+    </div>
+
+    <script src="status-bar.js"></script>
+    <script>
+        // Demo controls
+        document.getElementById('apply-btn').addEventListener('click', function() {
+            const model = document.getElementById('model-select').value;
+            const session = parseInt(document.getElementById('session-input').value);
+            const memory = parseInt(document.getElementById('memory-input').value);
+            const connection = document.getElementById('connection-select').value;
+
+            if (window.supertabStatusBar) {
+                window.supertabStatusBar.setModel(model);
+                window.supertabStatusBar.setSessionInfo(session, 100000);
+                window.supertabStatusBar.setMemoryUsage(memory);
+                window.supertabStatusBar.setConnectionStatus(connection);
+            }
+        });
+
+        document.getElementById('toggle-btn').addEventListener('click', function() {
+            if (window.supertabStatusBar) {
+                window.supertabStatusBar.toggle();
+            }
+        });
+
+        document.getElementById('compact-btn').addEventListener('click', function() {
+            if (window.supertabStatusBar) {
+                window.supertabStatusBar.toggleCompactMode();
+            }
+        });
+
+        // Real-time memory slider update
+        document.getElementById('memory-input').addEventListener('input', function() {
+            const memory = parseInt(this.value);
+            document.querySelector('label[for="memory-input"]').textContent =
+                `内存使用率 (%): ${memory}`;
+
+            if (window.supertabStatusBar) {
+                window.supertabStatusBar.setMemoryUsage(memory);
+            }
+        });
+    </script>
+</body>
+</html>
