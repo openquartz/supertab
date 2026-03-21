@@ -581,6 +581,63 @@ describe('TabManager', () => {
         url: 'https://a.com'
       });
     });
+
+    test('should bookmark tabs into selected bookmark folder', async () => {
+      mockStorageManager.getAllTabs.mockResolvedValue({
+        'tab-1': { uuid: 'tab-1', title: 'A', alias: '', url: 'https://a.com' }
+      });
+
+      global.chrome = {
+        ...global.chrome,
+        bookmarks: {
+          get: jest.fn().mockResolvedValue([{ id: 'folder-picked', title: 'My Folder' }]),
+          create: jest.fn().mockResolvedValue({ id: 'bookmark-1' }),
+          search: jest.fn().mockResolvedValue([]),
+          getTree: jest.fn().mockResolvedValue([{ children: [{ id: '1', children: [] }] }])
+        }
+      };
+
+      const result = await tabManager.bookmarkTabs(['tab-1'], { folderId: 'folder-picked' });
+
+      expect(result.success).toBe(true);
+      expect(result.folderId).toBe('folder-picked');
+      expect(global.chrome.bookmarks.create).toHaveBeenCalledWith({
+        parentId: 'folder-picked',
+        title: 'A',
+        url: 'https://a.com'
+      });
+    });
+  });
+
+  describe('listBookmarkFolders', () => {
+    test('should return flattened bookmark folder tree', async () => {
+      global.chrome = {
+        ...global.chrome,
+        bookmarks: {
+          getTree: jest.fn().mockResolvedValue([{
+            id: '0',
+            children: [
+              {
+                id: '1',
+                title: 'Bookmarks Bar',
+                children: [
+                  { id: '11', title: 'Work', children: [] },
+                  { id: '12', title: 'https://example.com', url: 'https://example.com' }
+                ]
+              }
+            ]
+          }])
+        }
+      };
+
+      const folders = await tabManager.listBookmarkFolders();
+
+      expect(folders).toEqual(expect.arrayContaining([
+        expect.objectContaining({ id: '1', title: 'Bookmarks Bar' }),
+        expect.objectContaining({ id: '11', title: 'Work' })
+      ]));
+      expect(folders.find(folder => folder.id === '12')).toBeUndefined();
+    });
   });
 
   describe('activateTab', () => {

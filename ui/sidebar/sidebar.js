@@ -11,6 +11,7 @@ class TabFlowSidebar {
     this.isLoading = false;
     this.contextMenu = null;
     this.eventBus = new EventTarget();
+    this.lastBookmarkFolderId = this.getPersistedBookmarkFolderId();
 
     this.initializeElements();
     this.setupEventListeners();
@@ -103,7 +104,9 @@ class TabFlowSidebar {
         this.handleMessage(request, sender, sendResponse);
       } catch (error) {
         console.error('Sidebar message handler error:', error);
-        sendResponse({ success: false, error: error?.message || 'Sidebar message handling failed' });
+        if (typeof sendResponse === 'function') {
+          sendResponse({ success: false, error: error?.message || 'Sidebar message handling failed' });
+        }
       }
       return false;
     });
@@ -739,14 +742,25 @@ class TabFlowSidebar {
     }
 
     try {
+      const folderSelection = await this.chooseBookmarkFolder();
+      if (!folderSelection) {
+        return;
+      }
+
       const response = await chrome.runtime.sendMessage({
         action: 'bookmarkTabs',
-        data: { tabUuids }
+        data: {
+          tabUuids,
+          ...folderSelection
+        }
       });
 
       if (response?.success) {
         const successCount = response.successCount || 0;
         const failedCount = response.failedCount || 0;
+        if (response.folderId) {
+          this.persistBookmarkFolderId(response.folderId);
+        }
         this.showToast(`已转收藏 ${successCount} 个标签页${failedCount > 0 ? `，失败 ${failedCount} 个` : ''}`, failedCount > 0 ? 'error' : 'success');
         this.selectionMode = false;
         this.selectedTabUuids.clear();
@@ -758,6 +772,92 @@ class TabFlowSidebar {
     } catch (error) {
       console.error('Failed to bookmark selected tabs:', error);
       this.showToast('批量收藏失败', 'error');
+    }
+  }
+
+  async chooseBookmarkFolder() {
+    try {
+      const response = await chrome.runtime.sendMessage({
+        action: 'listBookmarkFolders'
+      });
+
+      if (!response?.success) {
+        throw new Error(response?.error || '无法获取收藏目录');
+      }
+
+      const folders = Array.isArray(response.data) ? response.data : [];
+      const defaultIndex = Math.max(1, folders.findIndex(folder => folder.id === this.lastBookmarkFolderId) + 1 || 1);
+
+      if (folders.length === 0) {
+        const folderName = prompt('未检测到可用目录，请输入新建收藏目录名称：', 'TabFlow Favorites');
+        if (folderName === null) {
+          return null;
+        }
+
+        const sanitizedName = folderName.trim() || 'TabFlow Favorites';
+        return {
+          createFolderName: sanitizedName
+        };
+      }
+
+      const folderLines = folders.map((folder, index) => `${index + 1}. ${folder.path || folder.title}`).join('\n');
+      const input = prompt(
+        `请选择收藏目录（输入序号，默认 ${defaultIndex}）：\n${folderLines}\nN. 新建目录`,
+        String(defaultIndex)
+      );
+
+      if (input === null) {
+        return null;
+      }
+
+      const normalizedInput = input.trim().toLowerCase();
+      if (normalizedInput === 'n' || normalizedInput === 'new') {
+        const folderName = prompt('请输入新建收藏目录名称：', 'TabFlow Favorites');
+        if (folderName === null) {
+          return null;
+        }
+
+        const sanitizedName = folderName.trim() || 'TabFlow Favorites';
+        return {
+          createFolderName: sanitizedName
+        };
+      }
+
+      const selectedIndex = normalizedInput ? Number.parseInt(normalizedInput, 10) : defaultIndex;
+      if (!Number.isInteger(selectedIndex) || selectedIndex < 1 || selectedIndex > folders.length) {
+        this.showToast('目录选择无效，已取消收藏', 'error');
+        return null;
+      }
+
+      const selectedFolder = folders[selectedIndex - 1];
+      this.persistBookmarkFolderId(selectedFolder.id);
+      return {
+        folderId: selectedFolder.id
+      };
+    } catch (error) {
+      console.error('Failed to choose bookmark folder:', error);
+      this.showToast('获取收藏目录失败', 'error');
+      return null;
+    }
+  }
+
+  getPersistedBookmarkFolderId() {
+    try {
+      return localStorage.getItem('tabflow:lastBookmarkFolderId') || '';
+    } catch (error) {
+      return '';
+    }
+  }
+
+  persistBookmarkFolderId(folderId) {
+    if (!folderId) {
+      return;
+    }
+    this.lastBookmarkFolderId = folderId;
+    try {
+      localStorage.setItem('tabflow:lastBookmarkFolderId', folderId);
+    } catch (error) {
+      // Ignore storage exceptions.
     }
   }
 
@@ -858,7 +958,9 @@ class TabFlowSidebar {
 
   handleMessage(request, sender, sendResponse) {
     if (!request || typeof request !== 'object') {
-      sendResponse({ success: false, error: 'Invalid message payload' });
+      if (typeof sendResponse === 'function') {
+        sendResponse({ success: false, error: 'Invalid message payload' });
+      }
       return;
     }
 
@@ -867,15 +969,20 @@ class TabFlowSidebar {
     switch (action) {
       case 'refresh':
         this.refresh();
+        if (typeof sendResponse === 'function') {
+          sendResponse({ success: true });
+        }
         break;
       case 'show-toast':
         this.showToast(data.message, data.type);
+        if (typeof sendResponse === 'function') {
+          sendResponse({ success: true });
+        }
         break;
       default:
-        console.log('Unknown message:', action);
+        // Ignore unknown actions so runtime request/response can be handled by background.
+        return;
     }
-
-    sendResponse({ success: true });
   }
 }
 

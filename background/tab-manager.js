@@ -603,7 +603,7 @@ class TabManager {
     }
   }
 
-  async bookmarkTabs(tabUuids = []) {
+  async bookmarkTabs(tabUuids = [], options = {}) {
     try {
       if (!chrome?.bookmarks?.create || !chrome?.bookmarks?.search) {
         return {
@@ -624,7 +624,8 @@ class TabManager {
       }
 
       const storedTabs = await this.storageManager.getAllTabs();
-      const folderId = await this.ensureBookmarkFolder();
+      const targetFolder = await this.resolveBookmarkFolder(options);
+      const folderId = targetFolder.id;
 
       let successCount = 0;
       let failedCount = 0;
@@ -662,7 +663,8 @@ class TabManager {
         success: true,
         successCount,
         failedCount,
-        folderId
+        folderId,
+        folderTitle: targetFolder.title
       };
     } catch (error) {
       console.error('Error bookmarking tabs:', error);
@@ -675,12 +677,97 @@ class TabManager {
     }
   }
 
+  async listBookmarkFolders() {
+    try {
+      if (!chrome?.bookmarks?.getTree) {
+        return [];
+      }
+
+      const tree = await chrome.bookmarks.getTree();
+      const rootChildren = tree?.[0]?.children || [];
+      const folders = [];
+
+      rootChildren.forEach(node => {
+        this.collectBookmarkFolders(node, '', folders);
+      });
+
+      return folders.sort((a, b) => a.path.localeCompare(b.path, 'zh-CN'));
+    } catch (error) {
+      console.error('Error listing bookmark folders:', error);
+      return [];
+    }
+  }
+
+  collectBookmarkFolders(node, parentPath = '', output = []) {
+    if (!node || node.url) {
+      return;
+    }
+
+    const nodeTitle = typeof node.title === 'string' && node.title.trim()
+      ? node.title.trim()
+      : '未命名文件夹';
+    const path = parentPath ? `${parentPath} / ${nodeTitle}` : nodeTitle;
+
+    output.push({
+      id: node.id,
+      title: nodeTitle,
+      path,
+      parentId: node.parentId || null
+    });
+
+    const children = Array.isArray(node.children) ? node.children : [];
+    children.forEach(child => {
+      this.collectBookmarkFolders(child, path, output);
+    });
+  }
+
+  async resolveBookmarkFolder(options = {}) {
+    const selectedFolderId = typeof options.folderId === 'string'
+      ? options.folderId.trim()
+      : '';
+
+    if (selectedFolderId && chrome?.bookmarks?.get) {
+      try {
+        const nodes = await chrome.bookmarks.get(selectedFolderId);
+        const folder = nodes?.[0];
+        if (folder && !folder.url) {
+          return {
+            id: folder.id,
+            title: folder.title || '未命名文件夹'
+          };
+        }
+      } catch (error) {
+        console.warn('Selected bookmark folder is unavailable, falling back to default folder:', error);
+      }
+    }
+
+    const createFolderName = typeof options.createFolderName === 'string'
+      ? options.createFolderName.trim()
+      : '';
+    if (createFolderName) {
+      const parentId = await this.getBookmarksBarId();
+      const createdFolder = await chrome.bookmarks.create({
+        parentId,
+        title: createFolderName
+      });
+      return {
+        id: createdFolder.id,
+        title: createdFolder.title || createFolderName
+      };
+    }
+
+    return this.ensureBookmarkFolder();
+  }
+
   async ensureBookmarkFolder() {
     const folderTitle = 'TabFlow Favorites';
     const existingItems = await chrome.bookmarks.search({ title: folderTitle });
     const existingFolder = (existingItems || []).find(item => !item.url && item.title === folderTitle);
     if (existingFolder) {
-      return existingFolder.id;
+      return {
+        id: existingFolder.id,
+        title: existingFolder.title || folderTitle
+      };
     }
 
     const parentId = await this.getBookmarksBarId();
@@ -689,7 +776,10 @@ class TabManager {
       title: folderTitle
     });
 
-    return folder.id;
+    return {
+      id: folder.id,
+      title: folder.title || folderTitle
+    };
   }
 
   async getBookmarksBarId() {

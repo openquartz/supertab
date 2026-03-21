@@ -16,6 +16,9 @@ class TabFlowServiceWorker {
     this.tabWatcher = null;
     this.eventListenersSetup = false;
     this.messageHandlersSetup = false;
+    this.sidePanelAutoOpenEnabled = false;
+    this.sidebarRefreshTimer = null;
+    this.pendingRefreshReason = null;
 
     // Register Chrome event handlers synchronously so MV3 wake-up events are not missed.
     this.setupEventListeners();
@@ -39,6 +42,7 @@ class TabFlowServiceWorker {
         // Initialize tab manager
         this.tabManager = new TabManager(this.eventBus, this.storageManager, this.privacyManager);
         await this.tabManager.initialize();
+        this.setupDataSyncEvents();
 
         this.initialized = true;
         console.log('✅ TabFlow Service Worker initialized successfully');
@@ -87,6 +91,24 @@ class TabFlowServiceWorker {
         enabled: true,
         path: 'ui/sidebar/sidebar.html'
       });
+
+      if (typeof chrome.sidePanel.setPanelBehavior === 'function') {
+        const panelBehaviorResult = chrome.sidePanel.setPanelBehavior({
+          openPanelOnActionClick: true
+        });
+
+        if (panelBehaviorResult && typeof panelBehaviorResult.then === 'function') {
+          panelBehaviorResult
+            .then(() => {
+              this.sidePanelAutoOpenEnabled = true;
+            })
+            .catch((error) => {
+              console.warn('Failed to enable side panel auto-open behavior:', error);
+            });
+        } else {
+          this.sidePanelAutoOpenEnabled = true;
+        }
+      }
     }
 
     this.eventListenersSetup = true;
@@ -156,6 +178,7 @@ class TabFlowServiceWorker {
           }
           const group = await this.tabManager.createCustomGroup(data.name);
           sendResponse({ success: true, data: group });
+          this.scheduleSidebarRefresh('group_created');
           break;
 
         case 'updateTabNote':
@@ -165,6 +188,9 @@ class TabFlowServiceWorker {
           }
           const success = await this.tabManager.updateTabNote(data.tabUuid, data.note);
           sendResponse({ success });
+          if (success) {
+            this.scheduleSidebarRefresh('tab_note_updated');
+          }
           break;
 
         case 'updateTabAlias':
@@ -174,6 +200,9 @@ class TabFlowServiceWorker {
           }
           const aliasSuccess = await this.tabManager.updateTabAlias(data.tabUuid, data.alias);
           sendResponse({ success: aliasSuccess });
+          if (aliasSuccess) {
+            this.scheduleSidebarRefresh('tab_alias_updated');
+          }
           break;
 
         case 'moveTabToGroup':
@@ -183,6 +212,9 @@ class TabFlowServiceWorker {
           }
           const moveSuccess = await this.tabManager.moveTabToGroup(data.tabUuid, data.groupId);
           sendResponse({ success: moveSuccess });
+          if (moveSuccess) {
+            this.scheduleSidebarRefresh('tab_moved_to_group');
+          }
           break;
 
         case 'closeTab':
@@ -192,6 +224,9 @@ class TabFlowServiceWorker {
           }
           const closeSuccess = await this.tabManager.closeTab(data.tabId);
           sendResponse({ success: closeSuccess });
+          if (closeSuccess) {
+            this.scheduleSidebarRefresh('tab_closed');
+          }
           break;
 
         case 'deleteGroup':
@@ -201,6 +236,9 @@ class TabFlowServiceWorker {
           }
           const deleteGroupSuccess = await this.tabManager.deleteGroup(data.groupId, data.tabIds || []);
           sendResponse({ success: deleteGroupSuccess });
+          if (deleteGroupSuccess) {
+            this.scheduleSidebarRefresh('group_deleted');
+          }
           break;
 
         case 'bookmarkTabs':
@@ -208,8 +246,25 @@ class TabFlowServiceWorker {
             sendResponse({ success: false, error: 'tabUuids are required' });
             break;
           }
-          const bookmarkResult = await this.tabManager.bookmarkTabs(data.tabUuids);
+          const bookmarkOptions = {};
+          if (typeof data?.folderId === 'string' && data.folderId.trim()) {
+            bookmarkOptions.folderId = data.folderId.trim();
+          }
+          if (typeof data?.createFolderName === 'string' && data.createFolderName.trim()) {
+            bookmarkOptions.createFolderName = data.createFolderName.trim();
+          }
+          const bookmarkResult = Object.keys(bookmarkOptions).length > 0
+            ? await this.tabManager.bookmarkTabs(data.tabUuids, bookmarkOptions)
+            : await this.tabManager.bookmarkTabs(data.tabUuids);
           sendResponse(bookmarkResult);
+          if (bookmarkResult?.success) {
+            this.scheduleSidebarRefresh('tabs_bookmarked');
+          }
+          break;
+
+        case 'listBookmarkFolders':
+          const bookmarkFolders = await this.tabManager.listBookmarkFolders();
+          sendResponse({ success: true, data: bookmarkFolders });
           break;
 
         case 'activateTab':
@@ -252,11 +307,17 @@ class TabFlowServiceWorker {
           }
           const importSuccess = await this.importAllData(data);
           sendResponse({ success: importSuccess });
+          if (importSuccess) {
+            this.scheduleSidebarRefresh('data_imported');
+          }
           break;
 
         case 'clearAllData':
           const clearSuccess = await this.clearAllData();
           sendResponse({ success: clearSuccess });
+          if (clearSuccess) {
+            this.scheduleSidebarRefresh('data_cleared');
+          }
           break;
 
         case 'getPerformanceMetrics':
@@ -281,6 +342,7 @@ class TabFlowServiceWorker {
       await this.initialize();
       console.log('📄 Tab created:', tab.id, tab.url);
       await this.tabManager.handleTabCreated(tab);
+      this.scheduleSidebarRefresh('tab_created');
     } catch (error) {
       console.error('Error handling tab creation:', error);
     }
@@ -292,6 +354,7 @@ class TabFlowServiceWorker {
       if (changeInfo.status === 'complete' && tab.url) {
         console.log('📝 Tab updated:', tabId, tab.url);
         await this.tabManager.handleTabUpdated(tab);
+        this.scheduleSidebarRefresh('tab_updated');
       }
     } catch (error) {
       console.error('Error handling tab update:', error);
@@ -303,6 +366,7 @@ class TabFlowServiceWorker {
       await this.initialize();
       console.log('🗑️ Tab removed:', tabId);
       await this.tabManager.handleTabRemoved(tabId, removeInfo);
+      this.scheduleSidebarRefresh('tab_removed');
     } catch (error) {
       console.error('Error handling tab removal:', error);
     }
@@ -323,6 +387,7 @@ class TabFlowServiceWorker {
       await this.initialize();
       console.log('📦 Tab moved:', tabId, moveInfo);
       await this.tabManager.handleTabMoved(tabId, moveInfo);
+      this.scheduleSidebarRefresh('tab_moved');
     } catch (error) {
       console.error('Error handling tab move:', error);
     }
@@ -333,6 +398,7 @@ class TabFlowServiceWorker {
       await this.initialize();
       console.log('🔓 Tab detached:', tabId);
       await this.tabManager.handleTabDetached(tabId, detachInfo);
+      this.scheduleSidebarRefresh('tab_detached');
     } catch (error) {
       console.error('Error handling tab detach:', error);
     }
@@ -343,6 +409,7 @@ class TabFlowServiceWorker {
       await this.initialize();
       console.log('🔗 Tab attached:', tabId);
       await this.tabManager.handleTabAttached(tabId, attachInfo);
+      this.scheduleSidebarRefresh('tab_attached');
     } catch (error) {
       console.error('Error handling tab attach:', error);
     }
@@ -353,6 +420,7 @@ class TabFlowServiceWorker {
       await this.initialize();
       console.log('🪟 Window focus changed:', windowId);
       await this.tabManager.handleWindowFocusChanged(windowId);
+      this.scheduleSidebarRefresh('window_focus_changed');
     } catch (error) {
       console.error('Error handling window focus change:', error);
     }
@@ -367,8 +435,18 @@ class TabFlowServiceWorker {
         return;
       }
 
+      if (this.sidePanelAutoOpenEnabled) {
+        return;
+      }
+
+      const tabId = Number.isInteger(tab?.id) ? tab.id : null;
+      if (!tabId) {
+        console.warn('Cannot open side panel: missing active tab id');
+        return;
+      }
+
       // Do not await any async call before sidePanel.open to preserve user gesture context.
-      await chrome.sidePanel.open({ tabId: tab.id });
+      await chrome.sidePanel.open({ tabId });
       console.log('📬 Sidebar opened');
     } catch (error) {
       console.error('Failed to open side panel:', error);
@@ -414,10 +492,64 @@ class TabFlowServiceWorker {
     try {
       console.log('🔄 Performing initial tab sync...');
       await this.tabManager.ensureCurrentTabsSynced();
+      this.scheduleSidebarRefresh('initial_sync');
 
       console.log('✅ Initial tab sync completed');
     } catch (error) {
       console.error('Error during initial sync:', error);
+    }
+  }
+
+  setupDataSyncEvents() {
+    if (!this.eventBus || typeof this.eventBus.on !== 'function') {
+      return;
+    }
+
+    if (this._dataSyncEventsBound) {
+      return;
+    }
+
+    this._dataSyncEventsBound = true;
+    this.eventBus.on('group_deleted', () => this.scheduleSidebarRefresh('group_deleted'));
+    this.eventBus.on('tab_note_updated', () => this.scheduleSidebarRefresh('tab_note_updated'));
+    this.eventBus.on('tab_alias_updated', () => this.scheduleSidebarRefresh('tab_alias_updated'));
+    this.eventBus.on('tabs_bookmarked', () => this.scheduleSidebarRefresh('tabs_bookmarked'));
+  }
+
+  scheduleSidebarRefresh(reason = 'data_changed') {
+    this.pendingRefreshReason = reason;
+    if (this.sidebarRefreshTimer) {
+      return;
+    }
+
+    this.sidebarRefreshTimer = setTimeout(() => {
+      this.sidebarRefreshTimer = null;
+      const refreshReason = this.pendingRefreshReason || 'data_changed';
+      this.pendingRefreshReason = null;
+      this.broadcastSidebarRefresh(refreshReason);
+    }, 120);
+  }
+
+  broadcastSidebarRefresh(reason = 'data_changed') {
+    try {
+      if (!chrome?.runtime?.sendMessage) {
+        return;
+      }
+
+      chrome.runtime.sendMessage({
+        action: 'refresh',
+        data: {
+          reason,
+          at: Date.now()
+        }
+      }, () => {
+        const message = chrome.runtime?.lastError?.message || '';
+        if (message && !message.includes('Receiving end does not exist')) {
+          console.warn('Sidebar refresh broadcast warning:', message);
+        }
+      });
+    } catch (error) {
+      console.warn('Failed to broadcast sidebar refresh:', error);
     }
   }
 

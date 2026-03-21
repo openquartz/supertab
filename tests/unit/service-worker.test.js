@@ -14,6 +14,7 @@ describe('TabFlowServiceWorker', () => {
       deleteGroup: jest.fn().mockResolvedValue(true),
       updateTabAlias: jest.fn().mockResolvedValue(true),
       bookmarkTabs: jest.fn().mockResolvedValue({ success: true, successCount: 2, failedCount: 0 }),
+      listBookmarkFolders: jest.fn().mockResolvedValue([{ id: '1', title: 'Bookmarks Bar', path: 'Bookmarks Bar' }]),
       updateTabNote: jest.fn().mockResolvedValue(true),
       moveTabToGroup: jest.fn().mockResolvedValue(true),
       closeTab: jest.fn().mockResolvedValue(true),
@@ -48,6 +49,11 @@ describe('TabFlowServiceWorker', () => {
       },
       runtime: {
         lastError: null,
+        sendMessage: jest.fn((payload, callback) => {
+          if (typeof callback === 'function') {
+            callback();
+          }
+        }),
         onMessage: {
           addListener: jest.fn()
         },
@@ -85,6 +91,7 @@ describe('TabFlowServiceWorker', () => {
       },
       sidePanel: {
         setOptions: jest.fn(),
+        setPanelBehavior: jest.fn().mockResolvedValue(undefined),
         open: jest.fn().mockResolvedValue(undefined),
         hide: jest.fn().mockResolvedValue(undefined)
       }
@@ -95,6 +102,13 @@ describe('TabFlowServiceWorker', () => {
 
   test('registers runtime message listener during construction', () => {
     expect(global.chrome.runtime.onMessage.addListener).toHaveBeenCalled();
+  });
+
+  test('enables side panel auto-open behavior when available', () => {
+    new TabFlowServiceWorker();
+    expect(global.chrome.sidePanel.setPanelBehavior).toHaveBeenCalledWith({
+      openPanelOnActionClick: true
+    });
   });
 
   test('accepts top-level message payload fields when grouping tabs', async () => {
@@ -145,6 +159,30 @@ describe('TabFlowServiceWorker', () => {
     expect(sendResponse).toHaveBeenCalledWith({ success: true });
   });
 
+  test('broadcasts refresh after successful mutation', async () => {
+    jest.useFakeTimers();
+    const serviceWorker = new TabFlowServiceWorker();
+    const sendResponse = jest.fn();
+
+    await serviceWorker.handleMessage({
+      action: 'updateTabAlias',
+      data: {
+        tabUuid: 'tab-1',
+        alias: 'Renamed Tab'
+      }
+    }, null, sendResponse);
+
+    jest.advanceTimersByTime(150);
+    expect(global.chrome.runtime.sendMessage).toHaveBeenCalledWith(
+      expect.objectContaining({
+        action: 'refresh'
+      }),
+      expect.any(Function)
+    );
+
+    jest.useRealTimers();
+  });
+
   test('allows empty note string when updating tab note', async () => {
     const serviceWorker = new TabFlowServiceWorker();
     const sendResponse = jest.fn();
@@ -177,6 +215,36 @@ describe('TabFlowServiceWorker', () => {
       success: true,
       successCount: 2,
       failedCount: 0
+    });
+  });
+
+  test('bookmarks selected tabs with explicit folder options', async () => {
+    const serviceWorker = new TabFlowServiceWorker();
+    const sendResponse = jest.fn();
+
+    await serviceWorker.handleMessage({
+      action: 'bookmarkTabs',
+      data: {
+        tabUuids: ['tab-1'],
+        folderId: 'folder-123'
+      }
+    }, null, sendResponse);
+
+    expect(mockTabManager.bookmarkTabs).toHaveBeenCalledWith(['tab-1'], { folderId: 'folder-123' });
+  });
+
+  test('lists bookmark folders through tab manager', async () => {
+    const serviceWorker = new TabFlowServiceWorker();
+    const sendResponse = jest.fn();
+
+    await serviceWorker.handleMessage({
+      action: 'listBookmarkFolders'
+    }, null, sendResponse);
+
+    expect(mockTabManager.listBookmarkFolders).toHaveBeenCalled();
+    expect(sendResponse).toHaveBeenCalledWith({
+      success: true,
+      data: [{ id: '1', title: 'Bookmarks Bar', path: 'Bookmarks Bar' }]
     });
   });
 });
