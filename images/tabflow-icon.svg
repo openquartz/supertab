@@ -1,0 +1,32 @@
+<svg width="512" height="512" viewBox="0 0 512 512" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="bg" x1="64" y1="48" x2="448" y2="464" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#2C8CFF"/>
+      <stop offset="1" stop-color="#1552D6"/>
+    </linearGradient>
+    <linearGradient id="tabFront" x1="152" y1="162" x2="360" y2="358" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#FFFFFF"/>
+      <stop offset="1" stop-color="#EAF2FF"/>
+    </linearGradient>
+    <linearGradient id="flow" x1="194" y1="214" x2="322" y2="306" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#2E7DFF"/>
+      <stop offset="1" stop-color="#1A53C7"/>
+    </linearGradient>
+  </defs>
+
+  <rect x="40" y="40" width="432" height="432" rx="120" fill="url(#bg)"/>
+  <rect x="40" y="40" width="432" height="432" rx="120" fill="white" fill-opacity="0.08"/>
+
+  <path d="M142 146C142 130.536 154.536 118 170 118H299L353 172V296C353 311.464 340.464 324 325 324H170C154.536 324 142 311.464 142 296V146Z" fill="white" fill-opacity="0.35"/>
+  <path d="M166 172C166 156.536 178.536 144 194 144H323L377 198V322C377 337.464 364.464 350 349 350H194C178.536 350 166 337.464 166 322V172Z" fill="url(#tabFront)"/>
+  <path d="M323 144V180C323 190.493 331.507 199 342 199H377L323 144Z" fill="#CFE0FF"/>
+
+  <rect x="198" y="196" width="148" height="20" rx="10" fill="#C4D9FF"/>
+  <rect x="198" y="228" width="112" height="16" rx="8" fill="#D4E4FF"/>
+
+  <path d="M199 286C220.667 266 242.333 256 264 256C285.667 256 307.333 266 329 286" stroke="url(#flow)" stroke-width="22" stroke-linecap="round"/>
+  <path d="M199 286C220.667 306 242.333 316 264 316C285.667 316 307.333 306 329 286" stroke="url(#flow)" stroke-width="22" stroke-linecap="round"/>
+  <circle cx="264" cy="286" r="16" fill="#FFFFFF"/>
+
+  <path d="M120 392C120 372.118 136.118 356 156 356H356C375.882 356 392 372.118 392 392V392C392 401.941 383.941 410 374 410H138C128.059 410 120 401.941 120 392V392Z" fill="white" fill-opacity="0.18"/>
+</svg>

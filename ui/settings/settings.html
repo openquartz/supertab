@@ -1,0 +1,143 @@
+<!-- ui/settings/settings.html -->
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TabFlow - 设置</title>
+    <link rel="stylesheet" href="../sidebar/sidebar.css">
+    <link rel="stylesheet" href="settings.css">
+</head>
+<body>
+    <div id="settings-app">
+        <header class="tf-header">
+            <div class="tf-brand">
+                <span class="tf-icon">⚙️</span>
+                <h1>TabFlow 设置</h1>
+            </div>
+            <button id="close-btn" class="tf-btn tf-btn-icon" title="关闭">
+                <span>✕</span>
+            </button>
+        </header>
+
+        <div class="tf-content">
+            <!-- 隐私设置 -->
+            <section class="tf-settings-section">
+                <h2>隐私设置</h2>
+
+                <div class="tf-setting-item">
+                    <div class="tf-setting-info">
+                        <label class="tf-setting-label">加密备注</label>
+                        <p class="tf-setting-description">
+                            启用备注内容加密存储，保护敏感信息。
+                            启用后需要重新输入所有备注。
+                        </p>
+                    </div>
+                    <div class="tf-setting-control">
+                        <label class="tf-toggle">
+                            <input type="checkbox" id="encrypt-notes">
+                            <span class="tf-toggle-slider"></span>
+                        </label>
+                    </div>
+                </div>
+
+                <div class="tf-setting-item">
+                    <div class="tf-setting-info">
+                        <label class="tf-setting-label" for="exclude-domains">排除域名</label>
+                        <p class="tf-setting-description">
+                            输入要排除的域名（每行一个），这些网站的标签页不会被记录。
+                            例如：bank.example.com
+                        </p>
+                    </div>
+                    <div class="tf-setting-control">
+                        <textarea id="exclude-domains" rows="4" placeholder="bank.example.com\nsensitive-site.com"></textarea>
+                    </div>
+                </div>
+
+                <div class="tf-setting-item">
+                    <div class="tf-setting-info">
+                        <label class="tf-setting-label" for="auto-cleanup">自动清理</label>
+                        <p class="tf-setting-description">
+                            自动清理多少天前的标签页数据（0表示不自动清理）。
+                        </p>
+                    </div>
+                    <div class="tf-setting-control">
+                        <input type="number" id="auto-cleanup" min="0" max="365" value="30">
+                        <span class="tf-setting-unit">天</span>
+                    </div>
+                </div>
+            </section>
+
+            <!-- 数据管理 -->
+            <section class="tf-settings-section">
+                <h2>数据管理</h2>
+
+                <div class="tf-setting-item">
+                    <div class="tf-setting-info">
+                        <label class="tf-setting-label">导出数据</label>
+                        <p class="tf-setting-description">
+                            导出所有标签页数据和设置，可用于备份或迁移。
+                        </p>
+                    </div>
+                    <div class="tf-setting-control">
+                        <button id="export-data" class="tf-btn tf-btn-secondary">导出</button>
+                    </div>
+                </div>
+
+                <div class="tf-setting-item">
+                    <div class="tf-setting-info">
+                        <label class="tf-setting-label">导入数据</label>
+                        <p class="tf-setting-description">
+                            从备份文件导入标签页数据和设置。
+                            这将覆盖当前所有数据。
+                        </p>
+                    </div>
+                    <div class="tf-setting-control">
+                        <input type="file" id="import-file" accept=".json" style="display: none;">
+                        <button id="import-data" class="tf-btn tf-btn-secondary">导入</button>
+                    </div>
+                </div>
+
+                <div class="tf-setting-item tf-setting-item-danger">
+                    <div class="tf-setting-info">
+                        <label class="tf-setting-label">清除所有数据</label>
+                        <p class="tf-setting-description">
+                            删除所有标签页数据、分组和设置。此操作不可恢复。
+                        </p>
+                    </div>
+                    <div class="tf-setting-control">
+                        <button id="clear-data" class="tf-btn tf-btn-danger">清除</button>
+                    </div>
+                </div>
+            </section>
+
+            <!-- 关于 -->
+            <section class="tf-settings-section">
+                <h2>关于</h2>
+
+                <div class="tf-about-info">
+                    <div class="tf-about-item">
+                        <span class="tf-about-label">版本:</span>
+                        <span class="tf-about-value" id="version">1.0.0</span>
+                    </div>
+                    <div class="tf-about-item">
+                        <span class="tf-about-label">开发者:</span>
+                        <span class="tf-about-value">TabFlow Team</span>
+                    </div>
+                    <div class="tf-about-item">
+                        <span class="tf-about-label">反馈:</span>
+                        <a href="#" id="feedback-link" class="tf-about-link">发送反馈</a>
+                    </div>
+                </div>
+            </section>
+        </div>
+
+        <footer class="tf-footer">
+            <button id="save-settings" class="tf-btn tf-btn-primary">保存设置</button>
+            <button id="reset-settings" class="tf-btn tf-btn-secondary">重置为默认</button>
+        </footer>
+    </div>
+
+    <script src="settings.js"></script>
+</body>
+</html>

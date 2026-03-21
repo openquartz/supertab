@@ -1,3 +1,5 @@
+const EventBus = require('../../background/event-bus');
+
 describe('EventBus', () => {
   let eventBus;
 

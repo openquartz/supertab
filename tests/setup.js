@@ -1,18 +1,59 @@
 // Mock Chrome extension APIs for testing
+const storageData = {};
+
 global.chrome = {
   storage: {
     local: {
-      get: jest.fn(),
-      set: jest.fn(),
-      remove: jest.fn(),
-      clear: jest.fn(),
-      getBytesInUse: jest.fn()
+      get: jest.fn((keys, callback) => {
+        const result = {};
+        if (typeof keys === 'string') {
+          result[keys] = storageData[keys] || null;
+        } else if (Array.isArray(keys)) {
+          keys.forEach(k => result[k] = storageData[k] || null);
+        } else if (!keys) {
+          return Object.assign({}, storageData);
+        }
+        if (callback) callback(result);
+        return result;
+      }),
+      set: jest.fn((data, callback) => {
+        Object.assign(storageData, data);
+        if (callback) callback();
+      }),
+      remove: jest.fn((keys, callback) => {
+        if (Array.isArray(keys)) {
+          keys.forEach(k => delete storageData[k]);
+        } else {
+          delete storageData[keys];
+        }
+        if (callback) callback();
+      }),
+      clear: jest.fn((callback) => {
+        Object.keys(storageData).forEach(k => delete storageData[k]);
+        if (callback) callback();
+      }),
+      getBytesInUse: jest.fn((callback) => {
+        const bytes = JSON.stringify(storageData).length;
+        if (callback) callback(bytes);
+      })
     }
   },
   runtime: {
     lastError: null
+  },
+  tabs: {
+    query: jest.fn().mockResolvedValue([]),
+    remove: jest.fn(),
+    update: jest.fn(),
+    get: jest.fn()
+  },
+  windows: {
+    update: jest.fn()
   }
 };
+
+// Mock importScripts for service worker files
+global.importScripts = jest.fn();
 
 // Mock console methods to reduce noise in tests
 global.console = {

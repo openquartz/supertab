@@ -7,7 +7,8 @@
     "tabs",
     "storage",
     "sidePanel",
-    "contextMenus"
+    "contextMenus",
+    "bookmarks"
   ],
   "host_permissions": [
     "http://*/*",
@@ -22,16 +23,17 @@
   "action": {
     "default_title": "Open TabFlow",
     "default_icon": {
-      "16": "assets/icons/icon-16.png",
-      "32": "assets/icons/icon-32.png",
-      "48": "assets/icons/icon-48.png",
-      "128": "assets/icons/icon-128.png"
+      "16": "images/icon16.png",
+      "32": "images/icon32.png",
+      "48": "images/icon48.png",
+      "128": "images/icon128.png"
     }
   },
   "icons": {
-    "16": "assets/icons/icon-16.png",
-    "32": "assets/icons/icon-32.png",
-    "48": "assets/icons/icon-48.png",
-    "128": "assets/icons/icon-128.png"
-  }
+    "16": "images/icon16.png",
+    "32": "images/icon32.png",
+    "48": "images/icon48.png",
+    "128": "images/icon128.png"
+  },
+  "options_page": "ui/settings/settings.html"
 }

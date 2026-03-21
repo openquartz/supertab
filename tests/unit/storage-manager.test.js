@@ -49,7 +49,9 @@ describe('StorageManager', () => {
     });
 
     const result = await storageManager.checkStorageQuota();
-    expect(result).toBe(true);
+    expect(result).toEqual(expect.objectContaining({
+      isUnderQuota: true
+    }));
   });
 
   test('should perform auto cleanup of old tabs', async () => {

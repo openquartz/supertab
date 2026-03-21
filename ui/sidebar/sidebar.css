@@ -1,0 +1,791 @@
+:root {
+    /* Chrome UI Color Palette - 更中性的灰色调 */
+    --tf-primary: #1a73e8;
+    --tf-primary-hover: #1557b0;
+    --tf-primary-light: #e8f0fe;
+    --tf-bg-primary: #ffffff;
+    --tf-bg-secondary: #f8f9fa;
+    --tf-bg-hover: #f1f3f4;
+    --tf-bg-active: #e8eaed;
+    --tf-text-primary: #202124;
+    --tf-text-secondary: #5f6368;
+    --tf-text-muted: #9aa0a6;
+    --tf-border: #dadce0;
+    --tf-border-light: #e8eaed;
+    --tf-focus-ring: rgba(26, 115, 232, 0.4);
+
+    /* 更锐利的圆角，与Chrome一致 */
+    --tf-radius: 4px;
+    --tf-radius-lg: 6px;
+
+    /* 更紧凑的字体系统 */
+    --tf-font-size-xs: 11px;
+    --tf-font-size-sm: 12px;
+    --tf-font-size-md: 13px;
+    --tf-font-size-lg: 14px;
+
+    /* 更紧凑的间距，提高信息密度 */
+    --tf-spacing-xs: 2px;
+    --tf-spacing-sm: 4px;
+    --tf-spacing-md: 8px;
+    --tf-spacing-lg: 12px;
+    --tf-spacing-xl: 16px;
+
+    /* 轻微的投影，只在必要时使用 */
+    --tf-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+    --tf-shadow-lg: 0 2px 4px rgba(0, 0, 0, 0.15);
+
+    /* 更快的过渡 */
+    --tf-transition: all 0.15s ease;
+}
+
+.tf-hidden {
+    display: none !important;
+}
+
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+/* 优化字体系统 - 优先使用系统字体 */
+body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    font-size: var(--tf-font-size-md);
+    color: var(--tf-text-primary);
+    background: var(--tf-bg-primary);
+    line-height: 1.5;
+    overflow: hidden;
+    -webkit-font-smoothing: antialiased;
+}
+
+#tabflow-app {
+    display: flex;
+    flex-direction: column;
+    height: 100vh;
+    width: 320px;
+    background: var(--tf-bg-primary);
+}
+
+/* Header - 极简设计 */
+.tf-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: var(--tf-spacing-sm) var(--tf-spacing-md);
+    border-bottom: 1px solid var(--tf-border-light);
+    background: var(--tf-bg-primary);
+    flex-shrink: 0;
+    min-height: 40px;
+}
+
+.tf-brand {
+    display: flex;
+    align-items: center;
+    gap: var(--tf-spacing-sm);
+}
+
+.tf-brand h1 {
+    font-size: var(--tf-font-size-md);
+    font-weight: 500;
+    color: var(--tf-text-primary);
+    letter-spacing: -0.2px;
+}
+
+.tf-actions {
+    display: flex;
+    gap: 2px;
+}
+
+/* Buttons - Chrome扁平化风格 */
+.tf-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: var(--tf-spacing-xs);
+    padding: var(--tf-spacing-xs) var(--tf-spacing-sm);
+    border: none;
+    border-radius: var(--tf-radius);
+    background: transparent;
+    color: var(--tf-text-secondary);
+    font-size: var(--tf-font-size-sm);
+    font-weight: 500;
+    cursor: pointer;
+    transition: var(--tf-transition);
+    user-select: none;
+    min-height: 28px;
+}
+
+.tf-btn:hover {
+    background: var(--tf-bg-hover);
+    color: var(--tf-text-primary);
+}
+
+.tf-btn:active {
+    background: var(--tf-bg-active);
+}
+
+.tf-btn:focus-visible {
+    outline: 2px solid var(--tf-focus-ring);
+    outline-offset: 1px;
+}
+
+.tf-btn.active {
+    background: var(--tf-primary-light);
+    color: var(--tf-primary);
+}
+
+.tf-btn-primary {
+    background: var(--tf-primary);
+    color: white;
+}
+
+.tf-btn-primary:hover {
+    background: var(--tf-primary-hover);
+    color: white;
+}
+
+.tf-btn-icon {
+    padding: 0;
+    width: 28px;
+    height: 28px;
+    border-radius: var(--tf-radius);
+}
+
+.tf-btn-danger {
+    background: transparent;
+    color: #d93025;
+}
+
+.tf-btn-danger:hover {
+    background: #fce8e6;
+}
+
+.tf-btn-secondary {
+    background: var(--tf-bg-secondary);
+    color: var(--tf-text-primary);
+    border: 1px solid var(--tf-border);
+}
+
+.tf-btn-secondary:hover {
+    background: var(--tf-bg-hover);
+}
+
+/* Search - Chrome风格搜索框 */
+.tf-search-container {
+    padding: var(--tf-spacing-sm) var(--tf-spacing-md);
+    border-bottom: 1px solid var(--tf-border-light);
+    flex-shrink: 0;
+}
+
+.tf-search-box {
+    position: relative;
+    display: flex;
+    align-items: center;
+}
+
+.tf-search-input {
+    width: 100%;
+    padding: 6px 8px 6px 32px;
+    border: 1px solid transparent;
+    border-radius: var(--tf-radius-lg);
+    background: var(--tf-bg-secondary);
+    font-size: var(--tf-font-size-sm);
+    color: var(--tf-text-primary);
+    outline: none;
+    transition: var(--tf-transition);
+}
+
+.tf-search-input::placeholder {
+    color: var(--tf-text-muted);
+}
+
+.tf-search-input:hover {
+    background: var(--tf-bg-hover);
+}
+
+.tf-search-input:focus {
+    background: var(--tf-bg-primary);
+    border-color: var(--tf-primary);
+    box-shadow: 0 0 0 2px var(--tf-focus-ring);
+}
+
+.tf-search-icon {
+    position: absolute;
+    left: 8px;
+    color: var(--tf-text-muted);
+    pointer-events: none;
+    font-size: 14px;
+}
+
+/* Group Selector - Chrome标签栏风格 */
+.tf-group-selector {
+    display: flex;
+    border-bottom: 1px solid var(--tf-border-light);
+    background: var(--tf-bg-secondary);
+    flex-shrink: 0;
+    padding: 0 var(--tf-spacing-sm);
+}
+
+.tf-group-btn {
+    flex: 1;
+    padding: var(--tf-spacing-sm) var(--tf-spacing-md);
+    border: none;
+    background: transparent;
+    font-size: var(--tf-font-size-xs);
+    font-weight: 500;
+    color: var(--tf-text-secondary);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: var(--tf-spacing-xs);
+    transition: var(--tf-transition);
+    position: relative;
+    min-height: 32px;
+}
+
+.tf-group-btn:hover {
+    color: var(--tf-text-primary);
+}
+
+.tf-group-btn.active {
+    color: var(--tf-primary);
+}
+
+.tf-group-btn.active::after {
+    content: '';
+    position: absolute;
+    bottom: -1px;
+    left: 20%;
+    right: 20%;
+    height: 2px;
+    background: var(--tf-primary);
+    border-radius: 1px 1px 0 0;
+}
+
+/* Content */
+.tf-content {
+    flex: 1;
+    overflow-y: auto;
+    padding: 0;
+    background: var(--tf-bg-primary);
+}
+
+.tf-group-container {
+    display: none;
+}
+
+.tf-group-container.active {
+    display: block;
+}
+
+/* Groups - 紧凑的分组样式 */
+.tf-group {
+    display: block;
+    margin-bottom: 0;
+    border-bottom: 1px solid var(--tf-border-light);
+    background: var(--tf-bg-primary);
+}
+
+group-item {
+    display: block;
+}
+
+tab-item {
+    display: block;
+}
+
+.tf-group:last-child {
+    border-bottom: none;
+}
+
+.tf-group-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: var(--tf-spacing-sm) var(--tf-spacing-md);
+    background: var(--tf-bg-primary);
+    cursor: pointer;
+    transition: var(--tf-transition);
+    min-height: 36px;
+}
+
+.tf-group-header:hover {
+    background: var(--tf-bg-hover);
+}
+
+.tf-group-title {
+    display: flex;
+    align-items: center;
+    gap: var(--tf-spacing-sm);
+    flex: 1;
+    min-width: 0;
+}
+
+.tf-group-icon {
+    font-size: var(--tf-font-size-md);
+    flex-shrink: 0;
+    opacity: 0.7;
+}
+
+.tf-group-name {
+    font-weight: 500;
+    font-size: var(--tf-font-size-sm);
+    color: var(--tf-text-primary);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.tf-group-count {
+    background: var(--tf-bg-active);
+    color: var(--tf-text-secondary);
+    font-size: 10px;
+    font-weight: 500;
+    padding: 1px 5px;
+    border-radius: 9px;
+    min-width: 18px;
+    text-align: center;
+    flex-shrink: 0;
+}
+
+.tf-group-actions {
+    display: flex;
+    gap: 2px;
+    flex-shrink: 0;
+    opacity: 0;
+    transition: var(--tf-transition);
+}
+
+.tf-group-header:hover .tf-group-actions {
+    opacity: 1;
+}
+
+.tf-group-content {
+    max-height: 400px;
+    overflow-y: auto;
+    transition: max-height 0.2s ease;
+}
+
+.tf-group.collapsed .tf-group-content {
+    max-height: 0;
+    overflow: hidden;
+}
+
+/* Tabs - Chrome标签样式 */
+.tf-tab {
+    display: flex;
+    align-items: center;
+    gap: var(--tf-spacing-sm);
+    padding: 6px var(--tf-spacing-md);
+    border-bottom: 1px solid var(--tf-border-light);
+    cursor: pointer;
+    transition: background 0.1s ease;
+    position: relative;
+    min-height: 40px;
+}
+
+.tf-tab-select {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    width: 18px;
+    height: 18px;
+}
+
+.tf-tab-select-checkbox {
+    width: 14px;
+    height: 14px;
+    margin: 0;
+    accent-color: var(--tf-primary);
+    cursor: pointer;
+}
+
+.tf-tab:last-child {
+    border-bottom: none;
+}
+
+.tf-tab:hover {
+    background: var(--tf-bg-hover);
+}
+
+.tf-tab.active {
+    background: var(--tf-primary-light);
+}
+
+.tf-tab.active::before {
+    content: '';
+    position: absolute;
+    left: 0;
+    top: 0;
+    bottom: 0;
+    width: 3px;
+    background: var(--tf-primary);
+}
+
+.tf-tab.dragging {
+    opacity: 0.5;
+    background: var(--tf-bg-active);
+}
+
+.tf-tab-favicon {
+    width: 16px;
+    height: 16px;
+    flex-shrink: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.tf-tab-favicon img {
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+    border-radius: 2px;
+}
+
+.tf-tab-favicon .fallback-icon {
+    width: 16px;
+    height: 16px;
+    background: var(--tf-bg-active);
+    border-radius: 2px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 10px;
+    color: var(--tf-text-muted);
+}
+
+.tf-tab-content {
+    flex: 1;
+    min-width: 0;
+    overflow: hidden;
+}
+
+.tf-tab-title {
+    font-size: var(--tf-font-size-sm);
+    color: var(--tf-text-primary);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    line-height: 1.3;
+}
+
+.tf-tab-note {
+    font-size: var(--tf-font-size-xs);
+    color: var(--tf-primary);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    margin-top: 2px;
+}
+
+.tf-tab-url {
+    font-size: var(--tf-font-size-xs);
+    color: var(--tf-text-muted);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    margin-top: 1px;
+}
+
+.tf-tab-actions {
+    display: flex;
+    gap: 2px;
+    opacity: 0;
+    transition: opacity 0.1s ease;
+    flex-shrink: 0;
+}
+
+.tf-tab:hover .tf-tab-actions,
+.tf-tab.active .tf-tab-actions {
+    opacity: 1;
+}
+
+.tf-tab-action-btn {
+    padding: 4px;
+    border: none;
+    background: transparent;
+    color: var(--tf-text-muted);
+    cursor: pointer;
+    border-radius: var(--tf-radius);
+    transition: var(--tf-transition);
+    font-size: 12px;
+    width: 24px;
+    height: 24px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.tf-tab-action-btn:hover {
+    background: var(--tf-bg-active);
+    color: var(--tf-text-primary);
+}
+
+/* Footer - 简洁的工具栏 */
+.tf-footer {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: var(--tf-spacing-sm) var(--tf-spacing-md);
+    border-top: 1px solid var(--tf-border-light);
+    background: var(--tf-bg-secondary);
+    flex-shrink: 0;
+    min-height: 44px;
+}
+
+.tf-footer .tf-btn {
+    font-size: var(--tf-font-size-xs);
+}
+
+.tf-footer-actions {
+    display: flex;
+    align-items: center;
+    gap: var(--tf-spacing-sm);
+    flex: 1;
+    min-width: 0;
+}
+
+#batch-favorite-btn,
+#create-group-btn {
+    flex: 1;
+}
+
+.tf-stats {
+    display: flex;
+    gap: var(--tf-spacing-md);
+    font-size: var(--tf-font-size-xs);
+    color: var(--tf-text-muted);
+}
+
+/* Context Menu - Chrome风格 */
+.tf-context-menu {
+    position: fixed;
+    z-index: 10000;
+    background: #fff;
+    border: 1px solid var(--tf-border);
+    border-radius: var(--tf-radius-lg);
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15);
+    min-width: 180px;
+    padding: 4px 0;
+    font-size: 13px;
+    opacity: 0;
+    transform: scale(0.95);
+    transition: opacity 0.1s ease, transform 0.1s ease;
+}
+
+.tf-context-menu.visible {
+    opacity: 1;
+    transform: scale(1);
+}
+
+.tf-context-menu.tf-hidden {
+    display: none;
+}
+
+.tf-menu-item {
+    display: flex;
+    align-items: center;
+    gap: var(--tf-spacing-sm);
+    padding: 8px 12px;
+    cursor: pointer;
+    transition: background 0.05s ease;
+    user-select: none;
+    color: var(--tf-text-primary);
+}
+
+.tf-menu-item:hover {
+    background: var(--tf-primary-light);
+}
+
+.tf-menu-item.danger {
+    color: #d93025;
+}
+
+.tf-menu-item.danger:hover {
+    background: #fce8e6;
+}
+
+.tf-menu-item-danger {
+    color: #d93025;
+}
+
+.tf-menu-item-danger:hover {
+    background: #fce8e6;
+}
+
+.tf-menu-divider {
+    height: 1px;
+    background: var(--tf-border-light);
+    margin: 4px 8px;
+}
+
+/* Loading Overlay */
+.tf-loading {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(255, 255, 255, 0.9);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    z-index: 9999;
+    transition: var(--tf-transition);
+}
+
+.tf-loading-spinner {
+    width: 32px;
+    height: 32px;
+    border: 3px solid var(--tf-border);
+    border-top: 3px solid var(--tf-primary);
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+    margin-bottom: var(--tf-spacing-md);
+}
+
+.tf-loading-text {
+    font-size: var(--tf-font-size-sm);
+    color: var(--tf-text-secondary);
+}
+
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
+.tf-loading.tf-hidden {
+    display: none;
+}
+
+/* Empty State */
+.tf-empty-state {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 48px var(--tf-spacing-lg);
+    text-align: center;
+    color: var(--tf-text-muted);
+    font-size: var(--tf-font-size-sm);
+}
+
+.tf-empty-state svg {
+    margin-bottom: var(--tf-spacing-md);
+    color: var(--tf-text-muted);
+}
+
+.tf-empty-state p {
+    margin: 0;
+    line-height: 1.5;
+}
+
+.tf-empty-state .hint {
+    font-size: var(--tf-font-size-xs);
+    color: var(--tf-text-muted);
+    margin-top: var(--tf-spacing-xs);
+}
+
+/* Drag and Drop */
+.tf-group.drag-over {
+    border: 2px dashed var(--tf-primary);
+    background: rgba(0, 122, 255, 0.05);
+}
+
+/* Toast Notifications - Google Material风格 */
+.tf-toast {
+    position: fixed;
+    top: var(--tf-spacing-lg);
+    right: var(--tf-spacing-lg);
+    padding: 12px 16px;
+    border-radius: 4px;
+    font-size: 13px;
+    z-index: 10001;
+    max-width: 320px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+    color: white;
+    transform: translateX(120%);
+    transition: transform 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.tf-toast.show {
+    transform: translateX(0);
+}
+
+.tf-toast.success {
+    background: #188038;
+}
+
+.tf-toast.error {
+    background: #c5221f;
+}
+
+.tf-toast.warning {
+    background: #f9a825;
+    color: #202124;
+}
+
+.tf-toast.info {
+    background: #1967d2;
+}
+
+/* Responsive Design */
+@media (max-width: 360px) {
+    #tabflow-app {
+        width: 100vw;
+    }
+
+    .tf-group-btn span:last-child {
+        display: none;
+    }
+
+    .tf-group-btn {
+        padding: var(--tf-spacing-sm);
+    }
+
+    .tf-footer {
+        flex-direction: column;
+        gap: var(--tf-spacing-sm);
+        align-items: stretch;
+    }
+
+    .tf-stats {
+        flex-direction: row;
+        justify-content: space-between;
+    }
+}
+
+/* Accessibility */
+@media (prefers-reduced-motion: reduce) {
+    * {
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.01ms !important;
+    }
+}
+
+/* Focus styles */
+.tf-btn:focus,
+.tf-group-btn:focus,
+.tf-search-input:focus {
+    outline: 2px solid var(--tf-primary);
+    outline-offset: 2px;
+}
+
+/* High contrast mode */
+@media (prefers-contrast: high) {
+    .tf-btn,
+    .tf-group-btn {
+        border-width: 2px;
+    }
+
+    .tf-tab.active {
+        border-left-width: 4px;
+    }
+}

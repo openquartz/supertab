@@ -5,15 +5,34 @@ class StorageManager {
     this.QUOTA_THRESHOLD = 0.9; // 90% threshold
   }
 
+  async initialize() {
+    console.log('StorageManager initialized');
+    return true;
+  }
+
+  async importData(data) {
+    // Import tabs
+    if (data.tabs) {
+      await this.setStorageData('tabflow:tabs', data.tabs);
+    }
+    // Import groups
+    if (data.groups) {
+      await this.setStorageData('tabflow:groups', data.groups);
+    }
+    return true;
+  }
+
   async saveTab(tab) {
     try {
-      // Encrypt note if privacy is enabled
-      if (tab.note && this.privacyManager) {
-        tab.note = await this.privacyManager.encryptNote(tab.note);
+      const tabToSave = { ...tab };
+
+      // Encrypt note only when privacy encryption is explicitly enabled.
+      if (tabToSave.note && this.privacyManager && await this.shouldEncryptNotes()) {
+        tabToSave.note = await this.privacyManager.encryptNote(tabToSave.note);
       }
 
       const tabs = await this.getAllTabs();
-      tabs[tab.uuid] = tab;
+      tabs[tabToSave.uuid] = tabToSave;
 
       await this.setStorageData('tabflow:tabs', tabs);
       return true;
@@ -26,9 +45,9 @@ class StorageManager {
   async getTab(uuid) {
     try {
       const tabs = await this.getAllTabs();
-      const tab = tabs[uuid];
+      const tab = tabs[uuid] ? { ...tabs[uuid] } : null;
 
-      if (tab && tab.note && this.privacyManager) {
+      if (tab && tab.note && this.privacyManager && await this.shouldEncryptNotes()) {
         tab.note = await this.privacyManager.decryptNote(tab.note);
       }
 
@@ -54,6 +73,24 @@ class StorageManager {
     } catch (error) {
       console.error('Failed to get all tabs:', error);
       return {};
+    }
+  }
+
+  async shouldEncryptNotes() {
+    try {
+      if (!this.privacyManager) {
+        return false;
+      }
+
+      if (typeof this.privacyManager.getSettings === 'function') {
+        const settings = await this.privacyManager.getSettings();
+        return Boolean(settings?.privacy?.encryptNotes);
+      }
+
+      return Boolean(this.privacyManager.settings?.privacy?.encryptNotes);
+    } catch (error) {
+      console.warn('Failed to determine encryptNotes setting, defaulting to disabled');
+      return false;
     }
   }
 
@@ -169,14 +206,38 @@ class StorageManager {
 
   async checkStorageQuota() {
     try {
-      const bytesUsed = await new Promise((resolve) => {
-        chrome.storage.local.getBytesInUse((bytes) => resolve(bytes));
+      const bytesUsed = await new Promise((resolve, reject) => {
+        chrome.storage.local.getBytesInUse((bytes) => {
+          if (chrome.runtime.lastError) {
+            reject(new Error(chrome.runtime.lastError.message));
+          } else {
+            resolve(bytes);
+          }
+        });
       });
 
-      return bytesUsed < (this.STORAGE_QUOTA * this.QUOTA_THRESHOLD);
+      const quotaLimit = this.STORAGE_QUOTA * this.QUOTA_THRESHOLD;
+      const isUnderQuota = bytesUsed < quotaLimit;
+
+      if (!isUnderQuota) {
+        console.warn('Storage quota exceeded:', bytesUsed, '/', quotaLimit);
+      }
+
+      return {
+        isUnderQuota,
+        bytesUsed,
+        quotaLimit,
+        usagePercentage: (bytesUsed / quotaLimit) * 100
+      };
     } catch (error) {
       console.error('Failed to check storage quota:', error);
-      return false;
+      return {
+        isUnderQuota: false,
+        bytesUsed: 0,
+        quotaLimit: 0,
+        usagePercentage: 0,
+        error: error.message
+      };
     }
   }
 

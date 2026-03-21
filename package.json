@@ -1,0 +1,18 @@
+{
+  "name": "tabflow",
+  "version": "1.0.0",
+  "description": "Professional Chrome tab management extension",
+  "main": "background/service-worker.js",
+  "scripts": {
+    "test": "jest",
+    "test:watch": "jest --watch",
+    "test:coverage": "jest --coverage"
+  },
+  "keywords": ["chrome-extension", "tab-manager", "productivity"],
+  "author": "TabFlow Team",
+  "license": "MIT",
+  "devDependencies": {
+    "jest": "^29.7.0",
+    "jest-environment-jsdom": "^29.7.0"
+  }
+}
