@@ -4,6 +4,7 @@ module.exports = {
   moduleFileExtensions: ['js', 'json'],
   transform: {},
   setupFilesAfterEnv: ['<rootDir>/tests/setup.js'],
+  testPathIgnorePatterns: ['/node_modules/', '/\\.worktrees/'],
   collectCoverageFrom: [
     '**/background/**/*.js',
     '**/utils/**/*.js',

@@ -17,6 +17,7 @@ class SuperTabSidebar {
     this.bookmarkPickerTree = [];
     this.bookmarkPickerSelectedFolderId = '';
     this.bookmarkPickerCollapsedFolderIds = new Set();
+    this.contextMenuContext = null;
 
     this.initializeElements();
     this.setupEventListeners();
@@ -172,6 +173,15 @@ class SuperTabSidebar {
         }
       });
     }
+
+    this.contextMenu.addEventListener('click', (e) => {
+      const actionElement = e.target.closest('.tf-menu-item');
+      if (!actionElement) {
+        return;
+      }
+      const action = actionElement.dataset.action;
+      this.handleContextMenuAction(action);
+    });
 
     // Listen for messages from background script
     chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
@@ -554,6 +564,7 @@ class SuperTabSidebar {
   }
 
   showContextMenu(x, y, context) {
+    this.contextMenuContext = context;
     this.contextMenu.innerHTML = this.getContextMenuHTML(context);
     this.contextMenu.style.left = `${x}px`;
     this.contextMenu.style.top = `${y}px`;
@@ -576,10 +587,183 @@ class SuperTabSidebar {
   }
 
   hideContextMenu() {
+    this.contextMenuContext = null;
     this.contextMenu.classList.remove('visible');
     setTimeout(() => {
       this.contextMenu.classList.add('tf-hidden');
     }, 200);
+  }
+
+  async handleContextMenuAction(action) {
+    const context = this.contextMenuContext;
+    this.hideContextMenu();
+
+    if (!context || !action) {
+      return;
+    }
+
+    try {
+      if (context.type === 'tab') {
+        await this.handleTabContextMenuAction(action, context.data || {});
+        return;
+      }
+
+      if (context.type === 'group') {
+        await this.handleGroupContextMenuAction(action, context.data || {});
+      }
+    } catch (error) {
+      console.error('Failed to handle context menu action:', action, error);
+      this.showToast('操作失败，请重试', 'error');
+    }
+  }
+
+  async handleTabContextMenuAction(action, tabData) {
+    const tabId = Number.parseInt(tabData?.id ?? tabData?.tabId, 10);
+    const tabUuid = tabData?.uuid || tabData?.tabUuid;
+
+    switch (action) {
+      case 'activate':
+        if (Number.isInteger(tabId)) {
+          await this.activateTab(tabId);
+        }
+        break;
+      case 'add-note':
+        if (tabUuid) {
+          this.showNoteDialog(tabUuid);
+        }
+        break;
+      case 'move-to-group':
+        await this.showMoveToGroupDialog(tabUuid);
+        break;
+      case 'copy-url':
+        await this.copyTabUrl(tabData?.url || '');
+        break;
+      case 'close':
+        if (Number.isInteger(tabId)) {
+          await this.closeTab(tabId);
+        }
+        break;
+      default:
+        break;
+    }
+  }
+
+  async handleGroupContextMenuAction(action, groupData) {
+    switch (action) {
+      case 'expand-all':
+        this.setAllGroupCollapsed(false);
+        break;
+      case 'collapse-all':
+        this.setAllGroupCollapsed(true);
+        break;
+      case 'delete':
+        await this.deleteGroupFromContextMenu(groupData);
+        break;
+      default:
+        break;
+    }
+  }
+
+  setAllGroupCollapsed(collapsed) {
+    this.groups = (this.groups || []).map(group => ({
+      ...group,
+      collapsed
+    }));
+    this.renderGroups();
+  }
+
+  async deleteGroupFromContextMenu(groupData) {
+    const groupId = groupData?.id;
+    if (!groupId) {
+      return;
+    }
+
+    const tabIds = Array.from(new Set(
+      (groupData?.tabs || [])
+        .map(tab => Number.parseInt(tab?.id, 10))
+        .filter(Number.isInteger)
+    ));
+    const tabCount = tabIds.length;
+    const confirmed = confirm(`确定删除分组 "${groupData.name || '未命名分组'}" 并关闭其中 ${tabCount} 个标签页吗？`);
+    if (!confirmed) {
+      return;
+    }
+
+    const response = await chrome.runtime.sendMessage({
+      action: 'deleteGroup',
+      data: {
+        groupId,
+        tabIds
+      }
+    });
+
+    if (response?.success) {
+      this.showToast(`已删除分组并关闭 ${tabCount} 个标签页`, 'success');
+      await this.refresh();
+    } else {
+      throw new Error(response?.error || '删除分组失败');
+    }
+  }
+
+  async showMoveToGroupDialog(tabUuid) {
+    if (!tabUuid) {
+      return;
+    }
+
+    const response = await chrome.runtime.sendMessage({
+      action: 'getAllGroups'
+    });
+    if (!response?.success) {
+      this.showToast('获取分组失败', 'error');
+      return;
+    }
+
+    const groupsPayload = response.data;
+    const groups = Array.isArray(groupsPayload) ? groupsPayload : Object.values(groupsPayload || {});
+    if (groups.length === 0) {
+      this.showToast('暂无可用分组，请先创建分组', 'info');
+      return;
+    }
+
+    const groupLines = groups.map((group, index) => `${index + 1}. ${group.name}`).join('\n');
+    const input = prompt(`请选择分组（输入序号）：\n${groupLines}`, '1');
+    if (input === null) {
+      return;
+    }
+
+    const selectedIndex = Number.parseInt(input.trim(), 10);
+    if (!Number.isInteger(selectedIndex) || selectedIndex < 1 || selectedIndex > groups.length) {
+      this.showToast('分组选择无效', 'error');
+      return;
+    }
+
+    const selectedGroup = groups[selectedIndex - 1];
+    await this.moveTabToGroup(tabUuid, selectedGroup.id);
+  }
+
+  async copyTabUrl(url) {
+    const text = typeof url === 'string' ? url.trim() : '';
+    if (!text) {
+      this.showToast('链接为空，无法复制', 'error');
+      return;
+    }
+
+    try {
+      if (navigator.clipboard?.writeText) {
+        await navigator.clipboard.writeText(text);
+      } else {
+        const textArea = document.createElement('textarea');
+        textArea.value = text;
+        document.body.appendChild(textArea);
+        textArea.select();
+        document.execCommand('copy');
+        document.body.removeChild(textArea);
+      }
+      this.showToast('链接已复制', 'success');
+    } catch (error) {
+      console.error('Failed to copy tab url:', error);
+      this.showToast('复制链接失败', 'error');
+    }
   }
 
   getContextMenuHTML(context) {
@@ -1103,6 +1287,34 @@ class SuperTabSidebar {
   }
 
   bindGroupElementEvents(groupElement) {
+    groupElement.addEventListener('show-context-menu', (e) => {
+      const detail = e?.detail || {};
+      const tab = detail.tab || {};
+      this.showContextMenu(detail.x || 0, detail.y || 0, {
+        type: 'tab',
+        data: {
+          id: tab.id,
+          uuid: tab.uuid,
+          tabId: tab.id,
+          tabUuid: tab.uuid,
+          url: tab.url
+        }
+      });
+    });
+
+    groupElement.addEventListener('show-group-menu', (e) => {
+      const group = e?.detail?.group;
+      const element = e?.detail?.element;
+      if (!group || !element) {
+        return;
+      }
+      const rect = element.getBoundingClientRect();
+      this.showContextMenu(rect.right - 20, rect.top + 10, {
+        type: 'group',
+        data: group
+      });
+    });
+
     groupElement.addEventListener('group-moved-tab', () => {
       this.refresh();
     });

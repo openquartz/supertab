@@ -209,18 +209,27 @@ class TabItem extends HTMLElement {
 
   async closeTab() {
     try {
+      const tabId = Number.parseInt(this.tabData?.id, 10);
+      if (!Number.isInteger(tabId)) {
+        console.warn('关闭标签页失败：无效 tabId', this.tabData?.id);
+        return;
+      }
+
       const response = await chrome.runtime.sendMessage({
         action: 'closeTab',
+        tabId,
         data: {
-          tabId: this.tabData.id
+          tabId
         }
       });
 
       if (response?.success) {
         this.dispatchEvent(new CustomEvent('tab-closed', {
-          detail: { tabId: this.tabData.id, tabUuid: this.tabData.uuid },
+          detail: { tabId, tabUuid: this.tabData.uuid },
           bubbles: true
         }));
+      } else {
+        console.error('关闭标签页失败:', response?.error || 'unknown error');
       }
     } catch (error) {
       console.error('关闭标签页失败:', error);

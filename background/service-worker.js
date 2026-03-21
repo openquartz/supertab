@@ -218,11 +218,12 @@ class SuperTabServiceWorker {
           break;
 
         case 'closeTab':
-          if (!data?.tabId) {
+          const closeTabId = Number.parseInt(data?.tabId ?? request?.tabId, 10);
+          if (!Number.isInteger(closeTabId)) {
             sendResponse({ success: false, error: 'tabId is required' });
             break;
           }
-          const closeSuccess = await this.tabManager.closeTab(data.tabId);
+          const closeSuccess = await this.tabManager.closeTab(closeTabId);
           sendResponse({ success: closeSuccess });
           if (closeSuccess) {
             this.scheduleSidebarRefresh('tab_closed');
@@ -234,11 +235,29 @@ class SuperTabServiceWorker {
             sendResponse({ success: false, error: 'groupId is required' });
             break;
           }
-          const deleteGroupSuccess = await this.tabManager.deleteGroup(data.groupId, data.tabIds || []);
+          const normalizedDeleteTabIds = Array.from(new Set(
+            (Array.isArray(data.tabIds) ? data.tabIds : [])
+              .map(tabId => Number.parseInt(tabId, 10))
+              .filter(Number.isInteger)
+          ));
+          const deleteGroupSuccess = await this.tabManager.deleteGroup(data.groupId, normalizedDeleteTabIds);
           sendResponse({ success: deleteGroupSuccess });
           if (deleteGroupSuccess) {
             this.scheduleSidebarRefresh('group_deleted');
           }
+          break;
+
+        case 'updateGroup':
+          if (!data?.group || typeof data.group !== 'object') {
+            sendResponse({ success: false, error: 'group is required' });
+            break;
+          }
+          if (typeof this.tabManager.updateGroup !== 'function') {
+            sendResponse({ success: false, error: 'updateGroup is not supported' });
+            break;
+          }
+          const updateGroupSuccess = await this.tabManager.updateGroup(data.group);
+          sendResponse({ success: updateGroupSuccess });
           break;
 
         case 'bookmarkTabs':
@@ -268,11 +287,12 @@ class SuperTabServiceWorker {
           break;
 
         case 'activateTab':
-          if (!data?.tabId) {
+          const activateTabId = Number.parseInt(data?.tabId ?? request?.tabId, 10);
+          if (!Number.isInteger(activateTabId)) {
             sendResponse({ success: false, error: 'tabId is required' });
             break;
           }
-          const activateSuccess = await this.tabManager.activateTab(data.tabId);
+          const activateSuccess = await this.tabManager.activateTab(activateTabId);
           sendResponse({ success: activateSuccess });
           break;
 

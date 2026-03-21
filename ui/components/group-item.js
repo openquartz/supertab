@@ -234,9 +234,11 @@ class GroupItem extends HTMLElement {
   }
 
   async deleteGroup() {
-    const tabIds = (this.groupData.tabs || [])
-      .map(tab => tab.id)
-      .filter(Number.isInteger);
+    const tabIds = Array.from(new Set(
+      (this.groupData.tabs || [])
+        .map(tab => Number.parseInt(tab?.id, 10))
+        .filter(Number.isInteger)
+    ));
     const tabCount = tabIds.length;
 
     const confirmed = confirm(`确定删除分组 "${this.groupData.name}" 并关闭其中 ${tabCount} 个标签页吗？`);

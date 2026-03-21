@@ -549,11 +549,17 @@ class TabManager {
 
   async closeTab(tabId) {
     try {
+      const normalizedTabId = Number.parseInt(tabId, 10);
+      if (!Number.isInteger(normalizedTabId)) {
+        console.warn('Skip closing tab: invalid tab id', tabId);
+        return false;
+      }
+
       // Close tab in Chrome
-      await chrome.tabs.remove(tabId);
+      await chrome.tabs.remove(normalizedTabId);
 
       // The tab removal will be handled by handleTabRemoved
-      console.log('✅ Tab close requested:', tabId);
+      console.log('✅ Tab close requested:', normalizedTabId);
       return true;
     } catch (error) {
       console.error('Error closing tab:', error);
@@ -573,9 +579,21 @@ class TabManager {
         return true;
       }
 
-      await chrome.tabs.remove(uniqueTabIds);
-      console.log(`✅ Batch close requested for ${uniqueTabIds.length} tabs`);
-      return true;
+      let successCount = 0;
+      let failedCount = 0;
+
+      for (const tabId of uniqueTabIds) {
+        try {
+          await chrome.tabs.remove(tabId);
+          successCount++;
+        } catch (error) {
+          failedCount++;
+          console.warn('Failed to close tab during batch close:', tabId, error);
+        }
+      }
+
+      console.log(`✅ Batch close requested: ${successCount} success, ${failedCount} failed`);
+      return failedCount === 0;
     } catch (error) {
       console.error('Error closing tabs in batch:', error);
       return false;
@@ -584,7 +602,13 @@ class TabManager {
 
   async deleteGroup(groupId, tabIds = []) {
     try {
-      const closeSuccess = await this.closeTabs(tabIds);
+      const normalizedTabIds = Array.from(new Set(
+        (Array.isArray(tabIds) ? tabIds : [])
+          .map(tabId => Number.parseInt(tabId, 10))
+          .filter(Number.isInteger)
+      ));
+
+      const closeSuccess = await this.closeTabs(normalizedTabIds);
       if (!closeSuccess) {
         return false;
       }
@@ -594,11 +618,33 @@ class TabManager {
         await this.storageManager.removeGroup(groupId);
       }
 
-      this.eventBus.emit('group_deleted', { groupId, tabIds });
+      this.eventBus.emit('group_deleted', { groupId, tabIds: normalizedTabIds });
       console.log(`✅ Group delete requested: ${groupId}`);
       return true;
     } catch (error) {
       console.error('Error deleting group:', error);
+      return false;
+    }
+  }
+
+  async updateGroup(group) {
+    try {
+      if (!group || typeof group !== 'object' || !group.id) {
+        return false;
+      }
+
+      // Only custom groups are persisted; generated groups are transient.
+      if (String(group.id).startsWith('custom_')) {
+        const saved = await this.storageManager.saveGroup(group);
+        if (!saved) {
+          return false;
+        }
+      }
+
+      this.eventBus.emit('group_updated', { group });
+      return true;
+    } catch (error) {
+      console.error('Error updating group:', error);
       return false;
     }
   }

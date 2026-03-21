@@ -12,6 +12,7 @@ describe('SuperTabServiceWorker', () => {
       getAllTabs: jest.fn().mockResolvedValue([]),
       createCustomGroup: jest.fn().mockResolvedValue(null),
       deleteGroup: jest.fn().mockResolvedValue(true),
+      updateGroup: jest.fn().mockResolvedValue(true),
       updateTabAlias: jest.fn().mockResolvedValue(true),
       bookmarkTabs: jest.fn().mockResolvedValue({ success: true, successCount: 2, failedCount: 0 }),
       listBookmarkFolders: jest.fn().mockResolvedValue([{ id: '1', title: 'Bookmarks Bar', path: 'Bookmarks Bar' }]),
@@ -143,6 +144,40 @@ describe('SuperTabServiceWorker', () => {
     expect(sendResponse).toHaveBeenCalledWith({ success: true });
   });
 
+  test('updates group through tab manager', async () => {
+    const serviceWorker = new SuperTabServiceWorker();
+    const sendResponse = jest.fn();
+    const group = {
+      id: 'custom_1',
+      name: 'My Group',
+      collapsed: true
+    };
+
+    await serviceWorker.handleMessage({
+      action: 'updateGroup',
+      group
+    }, null, sendResponse);
+
+    expect(mockTabManager.updateGroup).toHaveBeenCalledWith(group);
+    expect(sendResponse).toHaveBeenCalledWith({ success: true });
+  });
+
+  test('normalizes deleteGroup tab ids before forwarding', async () => {
+    const serviceWorker = new SuperTabServiceWorker();
+    const sendResponse = jest.fn();
+
+    await serviceWorker.handleMessage({
+      action: 'deleteGroup',
+      data: {
+        groupId: 'domain_example_com',
+        tabIds: ['10', 10, 'abc', 12]
+      }
+    }, null, sendResponse);
+
+    expect(mockTabManager.deleteGroup).toHaveBeenCalledWith('domain_example_com', [10, 12]);
+    expect(sendResponse).toHaveBeenCalledWith({ success: true });
+  });
+
   test('updates tab alias through tab manager', async () => {
     const serviceWorker = new SuperTabServiceWorker();
     const sendResponse = jest.fn();
@@ -196,6 +231,32 @@ describe('SuperTabServiceWorker', () => {
     }, null, sendResponse);
 
     expect(mockTabManager.updateTabNote).toHaveBeenCalledWith('tab-1', '');
+    expect(sendResponse).toHaveBeenCalledWith({ success: true });
+  });
+
+  test('normalizes closeTab tab id from top-level payload', async () => {
+    const serviceWorker = new SuperTabServiceWorker();
+    const sendResponse = jest.fn();
+
+    await serviceWorker.handleMessage({
+      action: 'closeTab',
+      tabId: '321'
+    }, null, sendResponse);
+
+    expect(mockTabManager.closeTab).toHaveBeenCalledWith(321);
+    expect(sendResponse).toHaveBeenCalledWith({ success: true });
+  });
+
+  test('normalizes activateTab tab id from top-level payload', async () => {
+    const serviceWorker = new SuperTabServiceWorker();
+    const sendResponse = jest.fn();
+
+    await serviceWorker.handleMessage({
+      action: 'activateTab',
+      tabId: '654'
+    }, null, sendResponse);
+
+    expect(mockTabManager.activateTab).toHaveBeenCalledWith(654);
     expect(sendResponse).toHaveBeenCalledWith({ success: true });
   });
 

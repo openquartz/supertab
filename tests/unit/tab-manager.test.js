@@ -496,10 +496,24 @@ describe('TabManager', () => {
 
       expect(global.chrome.tabs.remove).toHaveBeenCalledWith(123);
     });
+
+    test('should normalize string tab id before closing', async () => {
+      global.chrome = {
+        ...global.chrome,
+        tabs: {
+          remove: jest.fn().mockResolvedValue(undefined)
+        }
+      };
+
+      const result = await tabManager.closeTab('456');
+
+      expect(result).toBe(true);
+      expect(global.chrome.tabs.remove).toHaveBeenCalledWith(456);
+    });
   });
 
   describe('closeTabs', () => {
-    test('should call chrome.tabs.remove with unique tab ids', async () => {
+    test('should call chrome.tabs.remove for each unique tab id', async () => {
       global.chrome = {
         ...global.chrome,
         tabs: {
@@ -510,7 +524,9 @@ describe('TabManager', () => {
 
       await tabManager.closeTabs([123, '123', 456]);
 
-      expect(global.chrome.tabs.remove).toHaveBeenCalledWith([123, 456]);
+      expect(global.chrome.tabs.remove).toHaveBeenNthCalledWith(1, 123);
+      expect(global.chrome.tabs.remove).toHaveBeenNthCalledWith(2, 456);
+      expect(global.chrome.tabs.remove).toHaveBeenCalledTimes(2);
     });
   });
 
@@ -527,7 +543,9 @@ describe('TabManager', () => {
       const success = await tabManager.deleteGroup('custom_abc', [1, 2, 3]);
 
       expect(success).toBe(true);
-      expect(global.chrome.tabs.remove).toHaveBeenCalledWith([1, 2, 3]);
+      expect(global.chrome.tabs.remove).toHaveBeenNthCalledWith(1, 1);
+      expect(global.chrome.tabs.remove).toHaveBeenNthCalledWith(2, 2);
+      expect(global.chrome.tabs.remove).toHaveBeenNthCalledWith(3, 3);
       expect(mockStorageManager.removeGroup).toHaveBeenCalledWith('custom_abc');
       expect(mockEventBus.emit).toHaveBeenCalledWith('group_deleted', expect.any(Object));
     });
@@ -545,6 +563,36 @@ describe('TabManager', () => {
 
       expect(success).toBe(true);
       expect(mockStorageManager.removeGroup).not.toHaveBeenCalled();
+    });
+  });
+
+  describe('updateGroup', () => {
+    test('should persist custom group updates', async () => {
+      const group = {
+        id: 'custom_1',
+        name: 'Custom Group',
+        collapsed: true
+      };
+
+      const result = await tabManager.updateGroup(group);
+
+      expect(result).toBe(true);
+      expect(mockStorageManager.saveGroup).toHaveBeenCalledWith(group);
+      expect(mockEventBus.emit).toHaveBeenCalledWith('group_updated', { group });
+    });
+
+    test('should not persist generated group updates', async () => {
+      const group = {
+        id: 'domain_example_com',
+        name: 'example.com',
+        collapsed: true
+      };
+
+      const result = await tabManager.updateGroup(group);
+
+      expect(result).toBe(true);
+      expect(mockStorageManager.saveGroup).not.toHaveBeenCalledWith(group);
+      expect(mockEventBus.emit).toHaveBeenCalledWith('group_updated', { group });
     });
   });
 
