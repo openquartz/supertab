@@ -1,6 +1,6 @@
 {
   "manifest_version": 3,
-  "name": "TabFlow",
+  "name": "SuperTab",
   "version": "1.0.0",
   "description": "Professional Chrome tab management with smart grouping, notes, and batch operations",
   "permissions": [
@@ -21,7 +21,7 @@
     "default_path": "ui/sidebar/sidebar.html"
   },
   "action": {
-    "default_title": "Open TabFlow",
+    "default_title": "Open SuperTab",
     "default_icon": {
       "16": "images/icon16.png",
       "32": "images/icon32.png",

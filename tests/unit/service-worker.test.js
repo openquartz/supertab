@@ -1,5 +1,5 @@
-describe('TabFlowServiceWorker', () => {
-  let TabFlowServiceWorker;
+describe('SuperTabServiceWorker', () => {
+  let SuperTabServiceWorker;
   let mockTabManager;
 
   beforeEach(() => {
@@ -97,7 +97,7 @@ describe('TabFlowServiceWorker', () => {
       }
     };
 
-    TabFlowServiceWorker = require('../../background/service-worker');
+    SuperTabServiceWorker = require('../../background/service-worker');
   });
 
   test('registers runtime message listener during construction', () => {
@@ -105,14 +105,14 @@ describe('TabFlowServiceWorker', () => {
   });
 
   test('enables side panel auto-open behavior when available', () => {
-    new TabFlowServiceWorker();
+    new SuperTabServiceWorker();
     expect(global.chrome.sidePanel.setPanelBehavior).toHaveBeenCalledWith({
       openPanelOnActionClick: true
     });
   });
 
   test('accepts top-level message payload fields when grouping tabs', async () => {
-    const serviceWorker = new TabFlowServiceWorker();
+    const serviceWorker = new SuperTabServiceWorker();
     const sendResponse = jest.fn();
 
     await serviceWorker.handleMessage({
@@ -128,7 +128,7 @@ describe('TabFlowServiceWorker', () => {
   });
 
   test('deletes group tabs through tab manager', async () => {
-    const serviceWorker = new TabFlowServiceWorker();
+    const serviceWorker = new SuperTabServiceWorker();
     const sendResponse = jest.fn();
 
     await serviceWorker.handleMessage({
@@ -144,7 +144,7 @@ describe('TabFlowServiceWorker', () => {
   });
 
   test('updates tab alias through tab manager', async () => {
-    const serviceWorker = new TabFlowServiceWorker();
+    const serviceWorker = new SuperTabServiceWorker();
     const sendResponse = jest.fn();
 
     await serviceWorker.handleMessage({
@@ -161,7 +161,7 @@ describe('TabFlowServiceWorker', () => {
 
   test('broadcasts refresh after successful mutation', async () => {
     jest.useFakeTimers();
-    const serviceWorker = new TabFlowServiceWorker();
+    const serviceWorker = new SuperTabServiceWorker();
     const sendResponse = jest.fn();
 
     await serviceWorker.handleMessage({
@@ -184,7 +184,7 @@ describe('TabFlowServiceWorker', () => {
   });
 
   test('allows empty note string when updating tab note', async () => {
-    const serviceWorker = new TabFlowServiceWorker();
+    const serviceWorker = new SuperTabServiceWorker();
     const sendResponse = jest.fn();
 
     await serviceWorker.handleMessage({
@@ -200,7 +200,7 @@ describe('TabFlowServiceWorker', () => {
   });
 
   test('bookmarks selected tabs through tab manager', async () => {
-    const serviceWorker = new TabFlowServiceWorker();
+    const serviceWorker = new SuperTabServiceWorker();
     const sendResponse = jest.fn();
 
     await serviceWorker.handleMessage({
@@ -219,7 +219,7 @@ describe('TabFlowServiceWorker', () => {
   });
 
   test('bookmarks selected tabs with explicit folder options', async () => {
-    const serviceWorker = new TabFlowServiceWorker();
+    const serviceWorker = new SuperTabServiceWorker();
     const sendResponse = jest.fn();
 
     await serviceWorker.handleMessage({
@@ -234,7 +234,7 @@ describe('TabFlowServiceWorker', () => {
   });
 
   test('lists bookmark folders through tab manager', async () => {
-    const serviceWorker = new TabFlowServiceWorker();
+    const serviceWorker = new SuperTabServiceWorker();
     const sendResponse = jest.fn();
 
     await serviceWorker.handleMessage({

@@ -1,6 +1,6 @@
-// TabFlow Sidebar - Main UI logic
+// SuperTab Sidebar - Main UI logic
 
-class TabFlowSidebar {
+class SuperTabSidebar {
   constructor() {
     this.currentGroup = 'domain';
     this.searchQuery = '';
@@ -1229,12 +1229,12 @@ class TabFlowSidebar {
 
 // Initialize sidebar when DOM is ready
 document.addEventListener('DOMContentLoaded', () => {
-  console.log('🎯 TabFlow Sidebar initializing...');
-  window.sidebar = new TabFlowSidebar();
-  console.log('✅ TabFlow Sidebar initialized');
+  console.log('🎯 SuperTab Sidebar initializing...');
+  window.sidebar = new SuperTabSidebar();
+  console.log('✅ SuperTab Sidebar initialized');
 });
 
 // Export for debugging
 if (typeof module !== 'undefined' && module.exports) {
-  module.exports = TabFlowSidebar;
+  module.exports = SuperTabSidebar;
 }

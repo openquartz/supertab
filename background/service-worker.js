@@ -1,11 +1,11 @@
-// TabFlow Service Worker - Main background script
+// SuperTab Service Worker - Main background script
 importScripts('./event-bus.js');
 importScripts('../utils/privacy-manager.js');
 importScripts('./storage-manager.js');
 importScripts('../utils/grouping-engine.js');
 importScripts('./tab-manager.js');
 
-class TabFlowServiceWorker {
+class SuperTabServiceWorker {
   constructor() {
     this.eventBus = new EventBus();
     this.privacyManager = new PrivacyManager();
@@ -29,7 +29,7 @@ class TabFlowServiceWorker {
     if (this.initialized) return;
     if (this.initializationPromise) return this.initializationPromise;
 
-    console.log('🔧 TabFlow Service Worker initializing...');
+    console.log('🔧 SuperTab Service Worker initializing...');
 
     this.initializationPromise = (async () => {
       try {
@@ -45,12 +45,12 @@ class TabFlowServiceWorker {
         this.setupDataSyncEvents();
 
         this.initialized = true;
-        console.log('✅ TabFlow Service Worker initialized successfully');
+        console.log('✅ SuperTab Service Worker initialized successfully');
 
         // Perform initial tab sync
         await this.performInitialSync();
       } catch (error) {
-        console.error('❌ Failed to initialize TabFlow Service Worker:', error);
+        console.error('❌ Failed to initialize SuperTab Service Worker:', error);
         throw error;
       } finally {
         this.initializationPromise = null;
@@ -460,7 +460,7 @@ class TabFlowServiceWorker {
   }
 
   async handleInstalled(details) {
-    console.log('📦 TabFlow installed/updated:', details.reason);
+    console.log('📦 SuperTab installed/updated:', details.reason);
 
     await this.initialize();
 
@@ -715,7 +715,7 @@ class TabFlowServiceWorker {
 }
 
 // Global service worker instance
-const serviceWorker = new TabFlowServiceWorker();
+const serviceWorker = new SuperTabServiceWorker();
 
 // Auto-initialize when script loads
 serviceWorker.initialize().catch(error => {
@@ -724,5 +724,5 @@ serviceWorker.initialize().catch(error => {
 
 // Export for use in other modules
 if (typeof module !== 'undefined' && module.exports) {
-  module.exports = TabFlowServiceWorker;
+  module.exports = SuperTabServiceWorker;
 }

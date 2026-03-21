@@ -1,5 +1,5 @@
 {
-  "name": "tabflow",
+  "name": "supertab",
   "version": "1.0.0",
   "description": "Professional Chrome tab management extension",
   "main": "background/service-worker.js",
@@ -9,7 +9,7 @@
     "test:coverage": "jest --coverage"
   },
   "keywords": ["chrome-extension", "tab-manager", "productivity"],
-  "author": "TabFlow Team",
+  "author": "SuperTab Team",
   "license": "MIT",
   "devDependencies": {
     "jest": "^29.7.0",

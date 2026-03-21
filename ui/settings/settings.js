@@ -1,5 +1,5 @@
 // ui/settings/settings.js
-class TabFlowSettings {
+class SuperTabSettings {
   constructor() {
     this.privacyManager = null;
     this.settings = {
@@ -264,7 +264,7 @@ class TabFlowSettings {
 
   openFeedback() {
     // 打开反馈页面或发送邮件
-    const subject = encodeURIComponent('TabFlow 插件反馈');
+    const subject = encodeURIComponent('SuperTab 插件反馈');
     const body = encodeURIComponent('请描述您遇到的问题或建议：\n\n');
     window.open(`mailto:feedback@tabflow.com?subject=${subject}&body=${body}`);
   }
@@ -317,5 +317,5 @@ class TabFlowSettings {
 
 // 初始化设置页面
 document.addEventListener('DOMContentLoaded', () => {
-  new TabFlowSettings();
+  new SuperTabSettings();
 });

@@ -573,7 +573,7 @@ describe('TabManager', () => {
       expect(result.successCount).toBe(2);
       expect(global.chrome.bookmarks.create).toHaveBeenNthCalledWith(1, {
         parentId: '1',
-        title: 'TabFlow Favorites'
+        title: 'SuperTab Favorites'
       });
       expect(global.chrome.bookmarks.create).toHaveBeenNthCalledWith(2, {
         parentId: 'folder-1',

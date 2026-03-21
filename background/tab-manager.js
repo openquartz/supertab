@@ -760,7 +760,7 @@ class TabManager {
   }
 
   async ensureBookmarkFolder() {
-    const folderTitle = 'TabFlow Favorites';
+    const folderTitle = 'SuperTab Favorites';
     const existingItems = await chrome.bookmarks.search({ title: folderTitle });
     const existingFolder = (existingItems || []).find(item => !item.url && item.title === folderTitle);
     if (existingFolder) {
