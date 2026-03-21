@@ -268,13 +268,17 @@ body {
 /* Content */
 .tf-content {
     flex: 1;
-    overflow-y: auto;
+    min-height: 0;
+    overflow: hidden;
     padding: 0;
     background: var(--tf-bg-primary);
 }
 
 .tf-group-container {
     display: none;
+    height: 100%;
+    overflow-y: auto;
+    min-height: 0;
 }
 
 .tf-group-container.active {
@@ -364,13 +368,10 @@ tab-item {
 }
 
 .tf-group-content {
-    max-height: 400px;
-    overflow-y: auto;
-    transition: max-height 0.2s ease;
+    overflow: visible;
 }
 
 .tf-group.collapsed .tf-group-content {
-    max-height: 0;
     overflow: hidden;
 }
 
@@ -662,6 +663,208 @@ tab-item {
 
 .tf-loading.tf-hidden {
     display: none;
+}
+
+/* Bookmark Folder Modal */
+.tf-modal {
+    position: fixed;
+    inset: 0;
+    z-index: 10020;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: var(--tf-spacing-md);
+}
+
+.tf-modal.tf-hidden {
+    display: none;
+}
+
+.tf-modal-backdrop {
+    position: absolute;
+    inset: 0;
+    background: rgba(32, 33, 36, 0.35);
+}
+
+.tf-modal-panel {
+    position: relative;
+    width: min(360px, calc(100vw - 24px));
+    max-height: calc(100vh - 24px);
+    border: 1px solid var(--tf-border);
+    border-radius: var(--tf-radius-lg);
+    background: var(--tf-bg-primary);
+    box-shadow: 0 10px 24px rgba(0, 0, 0, 0.2);
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+}
+
+.tf-modal-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--tf-spacing-md);
+    padding: var(--tf-spacing-md);
+    border-bottom: 1px solid var(--tf-border-light);
+}
+
+.tf-modal-header h2 {
+    font-size: var(--tf-font-size-md);
+    font-weight: 600;
+    color: var(--tf-text-primary);
+}
+
+.tf-modal-body {
+    padding: var(--tf-spacing-md);
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    gap: var(--tf-spacing-md);
+    min-height: 180px;
+}
+
+.tf-folder-tree {
+    border: 1px solid var(--tf-border-light);
+    border-radius: var(--tf-radius);
+    background: var(--tf-bg-secondary);
+    padding: var(--tf-spacing-sm);
+    overflow-y: auto;
+    min-height: 120px;
+    max-height: 260px;
+}
+
+.tf-folder-tree-empty {
+    color: var(--tf-text-muted);
+    font-size: var(--tf-font-size-sm);
+    padding: var(--tf-spacing-md);
+    text-align: center;
+}
+
+.tf-folder-tree-list,
+.tf-folder-children {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+}
+
+.tf-folder-children {
+    padding-left: 16px;
+}
+
+.tf-folder-children.is-collapsed {
+    display: none;
+}
+
+.tf-folder-row {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    min-height: 28px;
+}
+
+.tf-folder-toggle {
+    width: 16px;
+    height: 16px;
+    border: none;
+    border-radius: 3px;
+    background: transparent;
+    color: var(--tf-text-secondary);
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    transition: var(--tf-transition);
+    flex-shrink: 0;
+}
+
+.tf-folder-toggle:hover {
+    background: var(--tf-bg-hover);
+    color: var(--tf-text-primary);
+}
+
+.tf-folder-toggle svg {
+    transition: transform 0.15s ease;
+}
+
+.tf-folder-toggle.expanded svg {
+    transform: rotate(90deg);
+}
+
+.tf-folder-toggle-empty {
+    cursor: default;
+    opacity: 0;
+}
+
+.tf-folder-label {
+    display: flex;
+    align-items: center;
+    gap: var(--tf-spacing-sm);
+    flex: 1;
+    min-width: 0;
+    padding: 2px 4px;
+    border-radius: var(--tf-radius);
+    cursor: pointer;
+}
+
+.tf-folder-label:hover {
+    background: var(--tf-bg-hover);
+}
+
+.tf-folder-checkbox {
+    width: 14px;
+    height: 14px;
+    margin: 0;
+    accent-color: var(--tf-primary);
+    flex-shrink: 0;
+}
+
+.tf-folder-label-text {
+    font-size: var(--tf-font-size-sm);
+    color: var(--tf-text-primary);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.tf-bookmark-create {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.tf-bookmark-create label {
+    font-size: var(--tf-font-size-xs);
+    color: var(--tf-text-secondary);
+}
+
+.tf-bookmark-create-row {
+    display: flex;
+    gap: var(--tf-spacing-sm);
+}
+
+.tf-bookmark-create-input {
+    flex: 1;
+    min-width: 0;
+    border: 1px solid var(--tf-border);
+    border-radius: var(--tf-radius);
+    padding: 6px 8px;
+    font-size: var(--tf-font-size-sm);
+    color: var(--tf-text-primary);
+    outline: none;
+    background: var(--tf-bg-primary);
+}
+
+.tf-bookmark-create-input:focus {
+    border-color: var(--tf-primary);
+    box-shadow: 0 0 0 2px var(--tf-focus-ring);
+}
+
+.tf-modal-footer {
+    border-top: 1px solid var(--tf-border-light);
+    padding: var(--tf-spacing-md);
+    display: flex;
+    justify-content: flex-end;
+    gap: var(--tf-spacing-sm);
 }
 
 /* Empty State */

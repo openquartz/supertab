@@ -12,6 +12,11 @@ class TabFlowSidebar {
     this.contextMenu = null;
     this.eventBus = new EventTarget();
     this.lastBookmarkFolderId = this.getPersistedBookmarkFolderId();
+    this.bookmarkPickerResolver = null;
+    this.bookmarkPickerFolders = [];
+    this.bookmarkPickerTree = [];
+    this.bookmarkPickerSelectedFolderId = '';
+    this.bookmarkPickerCollapsedFolderIds = new Set();
 
     this.initializeElements();
     this.setupEventListeners();
@@ -22,6 +27,7 @@ class TabFlowSidebar {
     this.elements = {
       searchInput: document.getElementById('search-input'),
       groupButtons: document.querySelectorAll('.tf-group-btn'),
+      content: document.querySelector('.tf-content'),
       groupContainers: document.querySelectorAll('.tf-group-container'),
       domainGroups: document.getElementById('domain-groups'),
       dateGroups: document.getElementById('date-groups'),
@@ -35,7 +41,14 @@ class TabFlowSidebar {
       settingsBtn: document.getElementById('settings-btn'),
       batchFavoriteBtn: document.getElementById('batch-favorite-btn'),
       loadingOverlay: document.getElementById('loading-overlay'),
-      contextMenu: document.getElementById('context-menu')
+      contextMenu: document.getElementById('context-menu'),
+      bookmarkFolderModal: document.getElementById('bookmark-folder-modal'),
+      bookmarkFolderTree: document.getElementById('bookmark-folder-tree'),
+      bookmarkModalCloseBtn: document.getElementById('bookmark-modal-close-btn'),
+      bookmarkModalCancelBtn: document.getElementById('bookmark-modal-cancel-btn'),
+      bookmarkModalConfirmBtn: document.getElementById('bookmark-modal-confirm-btn'),
+      bookmarkFolderNameInput: document.getElementById('bookmark-folder-name-input'),
+      bookmarkCreateFolderBtn: document.getElementById('bookmark-create-folder-btn')
     };
 
     // Create context menu if it doesn't exist
@@ -94,9 +107,71 @@ class TabFlowSidebar {
 
     document.addEventListener('keydown', (e) => {
       if (e.key === 'Escape') {
+        if (this.isBookmarkModalOpen()) {
+          this.closeBookmarkFolderPicker(null);
+          return;
+        }
         this.hideContextMenu();
       }
     });
+
+    if (this.elements.bookmarkFolderModal) {
+      this.elements.bookmarkFolderModal.addEventListener('click', (e) => {
+        if (e.target && e.target.dataset && e.target.dataset.action === 'close-bookmark-modal') {
+          this.closeBookmarkFolderPicker(null);
+        }
+      });
+    }
+
+    if (this.elements.bookmarkModalCloseBtn) {
+      this.elements.bookmarkModalCloseBtn.addEventListener('click', () => {
+        this.closeBookmarkFolderPicker(null);
+      });
+    }
+
+    if (this.elements.bookmarkModalCancelBtn) {
+      this.elements.bookmarkModalCancelBtn.addEventListener('click', () => {
+        this.closeBookmarkFolderPicker(null);
+      });
+    }
+
+    if (this.elements.bookmarkModalConfirmBtn) {
+      this.elements.bookmarkModalConfirmBtn.addEventListener('click', () => {
+        this.confirmBookmarkFolderSelection();
+      });
+    }
+
+    if (this.elements.bookmarkCreateFolderBtn) {
+      this.elements.bookmarkCreateFolderBtn.addEventListener('click', () => {
+        this.createBookmarkFolderFromModal();
+      });
+    }
+
+    if (this.elements.bookmarkFolderNameInput) {
+      this.elements.bookmarkFolderNameInput.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter') {
+          e.preventDefault();
+          this.createBookmarkFolderFromModal();
+        }
+      });
+    }
+
+    if (this.elements.bookmarkFolderTree) {
+      this.elements.bookmarkFolderTree.addEventListener('change', (e) => {
+        const checkbox = e.target.closest('.tf-folder-checkbox');
+        if (checkbox) {
+          this.handleBookmarkFolderCheckboxChange(checkbox);
+        }
+      });
+
+      this.elements.bookmarkFolderTree.addEventListener('click', (e) => {
+        const toggleBtn = e.target.closest('[data-folder-toggle-id]');
+        if (toggleBtn) {
+          const folderId = toggleBtn.dataset.folderToggleId;
+          this.toggleBookmarkFolderNode(folderId);
+        }
+      });
+    }
 
     // Listen for messages from background script
     chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
@@ -183,6 +258,14 @@ class TabFlowSidebar {
     });
 
     this.currentGroup = groupType;
+
+    if (this.elements.content) {
+      this.elements.content.scrollTop = 0;
+    }
+    const activeContainer = this.elements[`${groupType}Groups`];
+    if (activeContainer) {
+      activeContainer.scrollTop = 0;
+    }
 
     // Load data for the new group type
     if (groupType !== previousGroup) {
@@ -786,59 +869,217 @@ class TabFlowSidebar {
       }
 
       const folders = Array.isArray(response.data) ? response.data : [];
-      const defaultIndex = Math.max(1, folders.findIndex(folder => folder.id === this.lastBookmarkFolderId) + 1 || 1);
-
-      if (folders.length === 0) {
-        const folderName = prompt('未检测到可用目录，请输入新建收藏目录名称：', 'TabFlow Favorites');
-        if (folderName === null) {
-          return null;
-        }
-
-        const sanitizedName = folderName.trim() || 'TabFlow Favorites';
-        return {
-          createFolderName: sanitizedName
-        };
-      }
-
-      const folderLines = folders.map((folder, index) => `${index + 1}. ${folder.path || folder.title}`).join('\n');
-      const input = prompt(
-        `请选择收藏目录（输入序号，默认 ${defaultIndex}）：\n${folderLines}\nN. 新建目录`,
-        String(defaultIndex)
-      );
-
-      if (input === null) {
-        return null;
-      }
-
-      const normalizedInput = input.trim().toLowerCase();
-      if (normalizedInput === 'n' || normalizedInput === 'new') {
-        const folderName = prompt('请输入新建收藏目录名称：', 'TabFlow Favorites');
-        if (folderName === null) {
-          return null;
-        }
-
-        const sanitizedName = folderName.trim() || 'TabFlow Favorites';
-        return {
-          createFolderName: sanitizedName
-        };
-      }
-
-      const selectedIndex = normalizedInput ? Number.parseInt(normalizedInput, 10) : defaultIndex;
-      if (!Number.isInteger(selectedIndex) || selectedIndex < 1 || selectedIndex > folders.length) {
-        this.showToast('目录选择无效，已取消收藏', 'error');
-        return null;
-      }
-
-      const selectedFolder = folders[selectedIndex - 1];
-      this.persistBookmarkFolderId(selectedFolder.id);
-      return {
-        folderId: selectedFolder.id
-      };
+      return await this.showBookmarkFolderPicker(folders);
     } catch (error) {
       console.error('Failed to choose bookmark folder:', error);
       this.showToast('获取收藏目录失败', 'error');
       return null;
     }
+  }
+
+  isBookmarkModalOpen() {
+    return Boolean(this.elements.bookmarkFolderModal && !this.elements.bookmarkFolderModal.classList.contains('tf-hidden'));
+  }
+
+  async showBookmarkFolderPicker(folders = []) {
+    if (!this.elements.bookmarkFolderModal || !this.elements.bookmarkFolderTree) {
+      throw new Error('Bookmark folder modal is unavailable');
+    }
+
+    if (this.bookmarkPickerResolver) {
+      const previousResolver = this.bookmarkPickerResolver;
+      this.bookmarkPickerResolver = null;
+      previousResolver(null);
+    }
+
+    this.bookmarkPickerFolders = Array.isArray(folders) ? folders : [];
+    this.bookmarkPickerTree = this.buildBookmarkFolderTree(this.bookmarkPickerFolders);
+    this.bookmarkPickerCollapsedFolderIds = new Set();
+
+    const defaultFolder = this.bookmarkPickerFolders.find(folder => folder.id === this.lastBookmarkFolderId)
+      || this.bookmarkPickerFolders[0]
+      || null;
+    this.bookmarkPickerSelectedFolderId = defaultFolder?.id || '';
+
+    if (this.elements.bookmarkFolderNameInput) {
+      this.elements.bookmarkFolderNameInput.value = '';
+    }
+
+    this.renderBookmarkFolderTree();
+    this.elements.bookmarkFolderModal.classList.remove('tf-hidden');
+
+    return new Promise((resolve) => {
+      this.bookmarkPickerResolver = resolve;
+    });
+  }
+
+  closeBookmarkFolderPicker(result = null) {
+    if (this.elements.bookmarkFolderModal) {
+      this.elements.bookmarkFolderModal.classList.add('tf-hidden');
+    }
+
+    const resolver = this.bookmarkPickerResolver;
+    this.bookmarkPickerResolver = null;
+    this.bookmarkPickerFolders = [];
+    this.bookmarkPickerTree = [];
+    this.bookmarkPickerSelectedFolderId = '';
+    this.bookmarkPickerCollapsedFolderIds = new Set();
+
+    if (typeof resolver === 'function') {
+      resolver(result);
+    }
+  }
+
+  buildBookmarkFolderTree(folders = []) {
+    const nodesById = new Map();
+    const orderById = new Map();
+
+    folders.forEach((folder, index) => {
+      if (!folder || typeof folder.id !== 'string') {
+        return;
+      }
+      orderById.set(folder.id, index);
+      nodesById.set(folder.id, {
+        id: folder.id,
+        title: typeof folder.title === 'string' && folder.title.trim() ? folder.title.trim() : '未命名文件夹',
+        parentId: typeof folder.parentId === 'string' ? folder.parentId : '',
+        children: []
+      });
+    });
+
+    const roots = [];
+    nodesById.forEach((node) => {
+      if (node.parentId && nodesById.has(node.parentId)) {
+        nodesById.get(node.parentId).children.push(node);
+      } else {
+        roots.push(node);
+      }
+    });
+
+    const sortNodes = (nodes) => {
+      nodes.sort((a, b) => {
+        const aOrder = orderById.has(a.id) ? orderById.get(a.id) : Number.MAX_SAFE_INTEGER;
+        const bOrder = orderById.has(b.id) ? orderById.get(b.id) : Number.MAX_SAFE_INTEGER;
+        return aOrder - bOrder;
+      });
+      nodes.forEach(childNode => sortNodes(childNode.children));
+    };
+    sortNodes(roots);
+    return roots;
+  }
+
+  renderBookmarkFolderTree() {
+    if (!this.elements.bookmarkFolderTree) {
+      return;
+    }
+
+    if (this.bookmarkPickerTree.length === 0) {
+      this.elements.bookmarkFolderTree.innerHTML = '<div class="tf-folder-tree-empty">暂无可用目录，请新建后收藏</div>';
+      if (this.elements.bookmarkModalConfirmBtn) {
+        this.elements.bookmarkModalConfirmBtn.disabled = true;
+      }
+      return;
+    }
+
+    const html = `
+      <ul class="tf-folder-tree-list">
+        ${this.bookmarkPickerTree.map(node => this.renderBookmarkFolderNode(node)).join('')}
+      </ul>
+    `;
+    this.elements.bookmarkFolderTree.innerHTML = html;
+
+    if (this.elements.bookmarkModalConfirmBtn) {
+      this.elements.bookmarkModalConfirmBtn.disabled = !this.bookmarkPickerSelectedFolderId;
+    }
+  }
+
+  renderBookmarkFolderNode(node) {
+    const hasChildren = Array.isArray(node.children) && node.children.length > 0;
+    const isCollapsed = hasChildren && this.bookmarkPickerCollapsedFolderIds.has(node.id);
+    const isSelected = this.bookmarkPickerSelectedFolderId === node.id;
+
+    return `
+      <li class="tf-folder-node">
+        <div class="tf-folder-row">
+          <button
+            type="button"
+            class="tf-folder-toggle ${hasChildren ? '' : 'tf-folder-toggle-empty'} ${hasChildren && !isCollapsed ? 'expanded' : ''}"
+            data-folder-toggle-id="${this.escapeHtml(node.id)}"
+            ${hasChildren ? '' : 'disabled'}
+            aria-label="${hasChildren ? (isCollapsed ? '展开目录' : '折叠目录') : '无子目录'}"
+          >
+            <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <polyline points="8 5 16 12 8 19"></polyline>
+            </svg>
+          </button>
+          <label class="tf-folder-label">
+            <input
+              type="checkbox"
+              class="tf-folder-checkbox"
+              data-folder-id="${this.escapeHtml(node.id)}"
+              ${isSelected ? 'checked' : ''}
+            >
+            <span class="tf-folder-label-text">${this.escapeHtml(node.title)}</span>
+          </label>
+        </div>
+        ${hasChildren ? `
+          <ul class="tf-folder-children ${isCollapsed ? 'is-collapsed' : ''}">
+            ${node.children.map(child => this.renderBookmarkFolderNode(child)).join('')}
+          </ul>
+        ` : ''}
+      </li>
+    `;
+  }
+
+  toggleBookmarkFolderNode(folderId) {
+    if (!folderId) {
+      return;
+    }
+
+    if (this.bookmarkPickerCollapsedFolderIds.has(folderId)) {
+      this.bookmarkPickerCollapsedFolderIds.delete(folderId);
+    } else {
+      this.bookmarkPickerCollapsedFolderIds.add(folderId);
+    }
+    this.renderBookmarkFolderTree();
+  }
+
+  handleBookmarkFolderCheckboxChange(checkbox) {
+    const folderId = checkbox?.dataset?.folderId;
+    if (!folderId) {
+      return;
+    }
+
+    this.bookmarkPickerSelectedFolderId = checkbox.checked ? folderId : '';
+    this.renderBookmarkFolderTree();
+  }
+
+  confirmBookmarkFolderSelection() {
+    if (!this.bookmarkPickerSelectedFolderId) {
+      this.showToast('请勾选一个收藏目录', 'info');
+      return;
+    }
+
+    this.closeBookmarkFolderPicker({
+      folderId: this.bookmarkPickerSelectedFolderId
+    });
+  }
+
+  createBookmarkFolderFromModal() {
+    if (!this.elements.bookmarkFolderNameInput) {
+      this.showToast('目录输入框不可用', 'error');
+      return;
+    }
+
+    const folderName = this.elements.bookmarkFolderNameInput.value.trim();
+    if (!folderName) {
+      this.showToast('请输入新目录名称', 'info');
+      return;
+    }
+
+    this.closeBookmarkFolderPicker({
+      createFolderName: folderName
+    });
   }
 
   getPersistedBookmarkFolderId() {
