@@ -11,10 +11,11 @@ Thumbs.db
 .codex/
 .omc/
 
-# Documentation files (Markdown) - except README.md and INSTALLATION.md
+# Documentation files (Markdown) - except README.md, INSTALLATION.md and RELEASE.md
 *.md
 !README.md
 !INSTALLATION.md
+!RELEASE.md
 
 # Node modules
 node_modules/
