@@ -7,9 +7,6 @@ importScripts('./tab-manager.js');
 importScripts('../utils/rule-engine.js');
 importScripts('../utils/rule-manager.js');
 importScripts('./auto-grouper.js');
-importScripts('../utils/rule-engine.js');
-importScripts('../utils/rule-manager.js');
-importScripts('./auto-grouper.js');
 
 class SuperTabServiceWorker {
   constructor() {
