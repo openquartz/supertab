@@ -7,7 +7,6 @@ class SuperTabSettings {
       excludeDomains: [],
       autoCleanupDays: 30,
       enableLogging: false,
-      groupDisplayMode: 'sidebar'
     };
 
     this.initializeElements();
@@ -46,7 +45,6 @@ class SuperTabSettings {
       version: document.getElementById('version'),
       feedbackLink: document.getElementById('feedback-link'),
       manageRules: document.getElementById('manage-rules'),
-      groupDisplayMode: document.getElementById('group-display-mode')
     };
   }
 
@@ -102,9 +100,6 @@ class SuperTabSettings {
     this.elements.encryptNotes.checked = Boolean(this.settings.encryptNotes);
     this.elements.excludeDomains.value = (this.settings.excludeDomains || []).join('\n');
     this.elements.autoCleanup.value = String(this.settings.autoCleanupDays ?? 30);
-    if (this.elements.groupDisplayMode) {
-      this.elements.groupDisplayMode.value = this.settings.groupDisplayMode === 'tab' ? 'tab' : 'sidebar';
-    }
 
     // 更新版本信息
     this.elements.version.textContent = chrome.runtime.getManifest().version;
@@ -120,7 +115,6 @@ class SuperTabSettings {
           .map(domain => domain.trim())
           .filter(domain => domain.length > 0),
         autoCleanupDays: parseInt(this.elements.autoCleanup.value) || 0,
-        groupDisplayMode: this.elements.groupDisplayMode?.value === 'tab' ? 'tab' : 'sidebar'
       };
 
       // 保存设置
@@ -227,7 +221,6 @@ class SuperTabSettings {
           excludeDomains: [],
           autoCleanupDays: 30,
           enableLogging: false,
-          groupDisplayMode: 'sidebar'
         };
         this.updateUI();
       }
@@ -247,7 +240,6 @@ class SuperTabSettings {
       excludeDomains: [],
       autoCleanupDays: 30,
       enableLogging: false,
-      groupDisplayMode: 'sidebar'
     };
 
     this.updateUI();
@@ -263,7 +255,6 @@ class SuperTabSettings {
       excludeDomains: Array.isArray(privacy.excludeDomains) ? privacy.excludeDomains : [],
       autoCleanupDays: Number.isFinite(autoCleanupDays) ? autoCleanupDays : 30,
       enableLogging: Boolean(rawSettings?.preferences?.enableLogging),
-      groupDisplayMode: rawSettings?.preferences?.groupDisplayMode === 'tab' ? 'tab' : 'sidebar'
     };
   }
 
@@ -275,7 +266,6 @@ class SuperTabSettings {
         autoCleanupDays: Number.parseInt(flatSettings.autoCleanupDays, 10) || 0
       },
       preferences: {
-        groupDisplayMode: flatSettings.groupDisplayMode === 'tab' ? 'tab' : 'sidebar'
       }
     };
   }
