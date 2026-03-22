@@ -146,6 +146,43 @@
         </div>
     </div>
 
+    <!-- 新建自定义分组弹窗 -->
+    <div id="create-group-modal" class="tf-modal tf-hidden" role="dialog" aria-modal="true" aria-labelledby="create-group-modal-title">
+        <div class="tf-modal-backdrop" data-action="close-create-group-modal"></div>
+        <div class="tf-modal-panel">
+            <div class="tf-modal-header">
+                <h2 id="create-group-modal-title">新建自定义分组</h2>
+                <button id="create-group-modal-close-btn" class="tf-btn tf-btn-icon" type="button" aria-label="关闭弹窗">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <line x1="18" y1="6" x2="6" y2="18"/>
+                        <line x1="6" y1="6" x2="18" y2="18"/>
+                    </svg>
+                </button>
+            </div>
+            <div class="tf-modal-body">
+                <div class="tf-form-field">
+                    <label for="create-group-name-input">分组名称</label>
+                    <input id="create-group-name-input" class="tf-bookmark-create-input" type="text" placeholder="例如：工作重点">
+                </div>
+                <div class="tf-form-field">
+                    <label for="create-group-tab-search-input">选择要加入的标签页（可选）</label>
+                    <input id="create-group-tab-search-input" class="tf-bookmark-create-input" type="text" placeholder="搜索标签页标题、备注或链接">
+                </div>
+                <div class="tf-create-group-picker-actions">
+                    <label class="tf-create-group-select-all">
+                        <input id="create-group-select-all-checkbox" type="checkbox">
+                        <span id="create-group-selection-summary">已选择 0 个标签页</span>
+                    </label>
+                </div>
+                <div id="create-group-tab-list" class="tf-create-group-tab-list"></div>
+            </div>
+            <div class="tf-modal-footer">
+                <button id="create-group-modal-cancel-btn" class="tf-btn tf-btn-secondary" type="button">取消</button>
+                <button id="create-group-modal-confirm-btn" class="tf-btn tf-btn-primary" type="button">创建分组</button>
+            </div>
+        </div>
+    </div>
+
     <!-- Import custom elements -->
     <script src="../components/group-item.js"></script>
     <script src="../components/tab-item.js"></script>

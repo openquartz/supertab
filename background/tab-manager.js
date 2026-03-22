@@ -415,7 +415,7 @@ class TabManager {
   }
 
   // Group management
-  async createCustomGroup(name, description = '') {
+  async createCustomGroup(name, description = '', tabUuids = []) {
     try {
       const group = {
         id: `custom_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
@@ -430,6 +430,31 @@ class TabManager {
 
       const saved = await this.storageManager.saveGroup(group);
       if (saved) {
+        const uniqueTabUuids = Array.from(new Set(
+          (Array.isArray(tabUuids) ? tabUuids : [])
+            .filter(tabUuid => typeof tabUuid === 'string' && tabUuid.length > 0)
+        ));
+        let assignedCount = 0;
+
+        for (const tabUuid of uniqueTabUuids) {
+          const tab = await this.storageManager.getTab(tabUuid);
+          if (!tab) {
+            continue;
+          }
+
+          tab.groupId = group.id;
+          const tabSaved = await this.storageManager.saveTab(tab);
+          if (!tabSaved) {
+            continue;
+          }
+
+          if (this.activeTabs.has(tab.id)) {
+            this.activeTabs.get(tab.id).groupId = group.id;
+          }
+          assignedCount++;
+        }
+
+        group.assignedCount = assignedCount;
         this.eventBus.emit('group_created', group);
         console.log('✅ Group created:', group.name);
         return group;

@@ -235,6 +235,35 @@ describe('TabManager', () => {
       expect(mockStorageManager.saveGroup).toHaveBeenCalled();
       expect(mockEventBus.emit).toHaveBeenCalledWith('group_created', expect.any(Object));
     });
+
+    test('should assign selected tabs into newly created custom group', async () => {
+      const tabOne = { id: 11, uuid: 'tab-1', title: 'A', groupId: 'ungrouped' };
+      const tabTwo = { id: 12, uuid: 'tab-2', title: 'B', groupId: 'ungrouped' };
+
+      mockStorageManager.getTab.mockImplementation(async (tabUuid) => {
+        if (tabUuid === 'tab-1') return { ...tabOne };
+        if (tabUuid === 'tab-2') return { ...tabTwo };
+        return null;
+      });
+      mockStorageManager.saveTab.mockResolvedValue(true);
+      tabManager.activeTabs.set(11, { ...tabOne });
+      tabManager.activeTabs.set(12, { ...tabTwo });
+
+      const result = await tabManager.createCustomGroup('My Group', '', ['tab-1', 'tab-2', 'tab-2']);
+
+      expect(result).toBeDefined();
+      expect(result.assignedCount).toBe(2);
+      expect(mockStorageManager.saveTab).toHaveBeenCalledWith(expect.objectContaining({
+        uuid: 'tab-1',
+        groupId: result.id
+      }));
+      expect(mockStorageManager.saveTab).toHaveBeenCalledWith(expect.objectContaining({
+        uuid: 'tab-2',
+        groupId: result.id
+      }));
+      expect(tabManager.activeTabs.get(11).groupId).toBe(result.id);
+      expect(tabManager.activeTabs.get(12).groupId).toBe(result.id);
+    });
   });
 
   describe('updateTabNote', () => {

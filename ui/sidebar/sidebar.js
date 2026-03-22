@@ -18,6 +18,8 @@ class SuperTabSidebar {
     this.bookmarkPickerSelectedFolderId = '';
     this.bookmarkPickerCollapsedFolderIds = new Set();
     this.contextMenuContext = null;
+    this.createGroupTabFilterQuery = '';
+    this.createGroupSelectedTabUuids = new Set();
 
     this.initializeElements();
     this.setupEventListeners();
@@ -49,7 +51,16 @@ class SuperTabSidebar {
       bookmarkModalCancelBtn: document.getElementById('bookmark-modal-cancel-btn'),
       bookmarkModalConfirmBtn: document.getElementById('bookmark-modal-confirm-btn'),
       bookmarkFolderNameInput: document.getElementById('bookmark-folder-name-input'),
-      bookmarkCreateFolderBtn: document.getElementById('bookmark-create-folder-btn')
+      bookmarkCreateFolderBtn: document.getElementById('bookmark-create-folder-btn'),
+      createGroupModal: document.getElementById('create-group-modal'),
+      createGroupModalCloseBtn: document.getElementById('create-group-modal-close-btn'),
+      createGroupModalCancelBtn: document.getElementById('create-group-modal-cancel-btn'),
+      createGroupModalConfirmBtn: document.getElementById('create-group-modal-confirm-btn'),
+      createGroupNameInput: document.getElementById('create-group-name-input'),
+      createGroupTabSearchInput: document.getElementById('create-group-tab-search-input'),
+      createGroupSelectAllCheckbox: document.getElementById('create-group-select-all-checkbox'),
+      createGroupSelectionSummary: document.getElementById('create-group-selection-summary'),
+      createGroupTabList: document.getElementById('create-group-tab-list')
     };
 
     // Create context menu if it doesn't exist
@@ -108,6 +119,10 @@ class SuperTabSidebar {
 
     document.addEventListener('keydown', (e) => {
       if (e.key === 'Escape') {
+        if (this.isCreateGroupModalOpen()) {
+          this.closeCreateGroupModal();
+          return;
+        }
         if (this.isBookmarkModalOpen()) {
           this.closeBookmarkFolderPicker(null);
           return;
@@ -121,6 +136,85 @@ class SuperTabSidebar {
         if (e.target && e.target.dataset && e.target.dataset.action === 'close-bookmark-modal') {
           this.closeBookmarkFolderPicker(null);
         }
+      });
+    }
+
+    if (this.elements.createGroupModal) {
+      this.elements.createGroupModal.addEventListener('click', (e) => {
+        if (e.target && e.target.dataset && e.target.dataset.action === 'close-create-group-modal') {
+          this.closeCreateGroupModal();
+        }
+      });
+    }
+
+    if (this.elements.createGroupModalCloseBtn) {
+      this.elements.createGroupModalCloseBtn.addEventListener('click', () => {
+        this.closeCreateGroupModal();
+      });
+    }
+
+    if (this.elements.createGroupModalCancelBtn) {
+      this.elements.createGroupModalCancelBtn.addEventListener('click', () => {
+        this.closeCreateGroupModal();
+      });
+    }
+
+    if (this.elements.createGroupModalConfirmBtn) {
+      this.elements.createGroupModalConfirmBtn.addEventListener('click', () => {
+        this.submitCreateGroupFromModal();
+      });
+    }
+
+    if (this.elements.createGroupNameInput) {
+      this.elements.createGroupNameInput.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter') {
+          e.preventDefault();
+          this.submitCreateGroupFromModal();
+        }
+      });
+    }
+
+    if (this.elements.createGroupTabSearchInput) {
+      this.elements.createGroupTabSearchInput.addEventListener('input', (e) => {
+        this.createGroupTabFilterQuery = e.target.value || '';
+        this.renderCreateGroupTabPicker();
+      });
+    }
+
+    if (this.elements.createGroupSelectAllCheckbox) {
+      this.elements.createGroupSelectAllCheckbox.addEventListener('change', (e) => {
+        const shouldSelect = Boolean(e.target.checked);
+        const visibleTabs = this.getFilteredCreateGroupTabs();
+        visibleTabs.forEach((tab) => {
+          if (tab?.uuid) {
+            if (shouldSelect) {
+              this.createGroupSelectedTabUuids.add(tab.uuid);
+            } else {
+              this.createGroupSelectedTabUuids.delete(tab.uuid);
+            }
+          }
+        });
+        this.renderCreateGroupTabPicker();
+      });
+    }
+
+    if (this.elements.createGroupTabList) {
+      this.elements.createGroupTabList.addEventListener('change', (e) => {
+        const checkbox = e.target.closest('.tf-create-group-tab-checkbox');
+        if (!checkbox) {
+          return;
+        }
+        const tabUuid = checkbox.dataset.tabUuid;
+        if (!tabUuid) {
+          return;
+        }
+        if (checkbox.checked) {
+          this.createGroupSelectedTabUuids.add(tabUuid);
+        } else {
+          this.createGroupSelectedTabUuids.delete(tabUuid);
+        }
+        this.updateCreateGroupSelectionSummary();
+        this.syncCreateGroupSelectAllCheckbox();
       });
     }
 
@@ -218,6 +312,9 @@ class SuperTabSidebar {
         this.renderGroups();
         this.updateStats();
         this.updateSelectionUI();
+        if (this.isCreateGroupModalOpen()) {
+          this.renderCreateGroupTabPicker();
+        }
         console.log(`📊 Loaded ${this.tabs.length} tabs in ${this.groups.length} groups`);
       } else {
         throw new Error(response.error || 'Failed to load data');
@@ -883,28 +980,174 @@ class SuperTabSidebar {
   }
 
   showCreateGroupDialog() {
-    const groupName = prompt('请输入分组名称:');
-    if (groupName && groupName.trim()) {
-      this.createGroup(groupName.trim());
+    if (!this.elements.createGroupModal || !this.elements.createGroupNameInput || !this.elements.createGroupTabList) {
+      const groupName = prompt('请输入分组名称:');
+      if (groupName && groupName.trim()) {
+        this.createGroup(groupName.trim());
+      }
+      return;
+    }
+
+    this.createGroupTabFilterQuery = '';
+    this.createGroupSelectedTabUuids = this.selectionMode
+      ? new Set(Array.from(this.selectedTabUuids))
+      : new Set();
+
+    this.elements.createGroupNameInput.value = '';
+    if (this.elements.createGroupTabSearchInput) {
+      this.elements.createGroupTabSearchInput.value = '';
+    }
+
+    this.renderCreateGroupTabPicker();
+    this.elements.createGroupModal.classList.remove('tf-hidden');
+    this.elements.createGroupNameInput.focus();
+  }
+
+  isCreateGroupModalOpen() {
+    return Boolean(this.elements.createGroupModal && !this.elements.createGroupModal.classList.contains('tf-hidden'));
+  }
+
+  closeCreateGroupModal() {
+    if (!this.elements.createGroupModal) {
+      return;
+    }
+    this.elements.createGroupModal.classList.add('tf-hidden');
+    this.createGroupTabFilterQuery = '';
+    this.createGroupSelectedTabUuids = new Set();
+  }
+
+  getCreateGroupCandidateTabs() {
+    const uniqueTabs = new Map();
+    (Array.isArray(this.tabs) ? this.tabs : []).forEach((tab) => {
+      if (!tab || typeof tab !== 'object' || !tab.uuid) {
+        return;
+      }
+      const groupId = typeof tab.groupId === 'string' ? tab.groupId : '';
+      if (groupId.startsWith('custom_')) {
+        return;
+      }
+      if (!uniqueTabs.has(tab.uuid)) {
+        uniqueTabs.set(tab.uuid, tab);
+      }
+    });
+    return Array.from(uniqueTabs.values());
+  }
+
+  getFilteredCreateGroupTabs() {
+    const query = this.createGroupTabFilterQuery.toLowerCase().trim();
+    const tabs = this.getCreateGroupCandidateTabs();
+    if (!query) {
+      return tabs;
+    }
+    return tabs.filter((tab) => {
+      const title = String(tab.alias || tab.title || '').toLowerCase();
+      const note = String(tab.note || '').toLowerCase();
+      const url = String(tab.url || '').toLowerCase();
+      return title.includes(query) || note.includes(query) || url.includes(query);
+    });
+  }
+
+  renderCreateGroupTabPicker() {
+    if (!this.elements.createGroupTabList) {
+      return;
+    }
+
+    const tabs = this.getFilteredCreateGroupTabs();
+    if (tabs.length === 0) {
+      this.elements.createGroupTabList.innerHTML = '<div class="tf-create-group-tab-list-empty">暂无可选标签页</div>';
+      this.updateCreateGroupSelectionSummary();
+      this.syncCreateGroupSelectAllCheckbox();
+      return;
+    }
+
+    this.elements.createGroupTabList.innerHTML = tabs.map((tab) => {
+      const title = this.escapeHtml(tab.alias || tab.title || 'Untitled');
+      const url = this.escapeHtml(tab.url || '');
+      const note = tab.note ? this.escapeHtml(tab.note) : '';
+      const checked = this.createGroupSelectedTabUuids.has(tab.uuid) ? 'checked' : '';
+
+      return `
+        <label class="tf-create-group-tab-item">
+          <input type="checkbox" class="tf-create-group-tab-checkbox" data-tab-uuid="${this.escapeHtml(tab.uuid)}" ${checked}>
+          <div class="tf-create-group-tab-text">
+            <div class="tf-create-group-tab-title">${title}</div>
+            ${note ? `<div class="tf-create-group-tab-meta">${note}</div>` : ''}
+            <div class="tf-create-group-tab-meta">${url}</div>
+          </div>
+        </label>
+      `;
+    }).join('');
+
+    this.updateCreateGroupSelectionSummary();
+    this.syncCreateGroupSelectAllCheckbox();
+  }
+
+  updateCreateGroupSelectionSummary() {
+    if (!this.elements.createGroupSelectionSummary) {
+      return;
+    }
+    this.elements.createGroupSelectionSummary.textContent = `已选择 ${this.createGroupSelectedTabUuids.size} 个标签页`;
+  }
+
+  syncCreateGroupSelectAllCheckbox() {
+    if (!this.elements.createGroupSelectAllCheckbox) {
+      return;
+    }
+
+    const tabs = this.getFilteredCreateGroupTabs();
+    if (tabs.length === 0) {
+      this.elements.createGroupSelectAllCheckbox.checked = false;
+      this.elements.createGroupSelectAllCheckbox.indeterminate = false;
+      return;
+    }
+
+    const selectedVisibleCount = tabs.filter(tab => this.createGroupSelectedTabUuids.has(tab.uuid)).length;
+    this.elements.createGroupSelectAllCheckbox.checked = selectedVisibleCount === tabs.length;
+    this.elements.createGroupSelectAllCheckbox.indeterminate = selectedVisibleCount > 0 && selectedVisibleCount < tabs.length;
+  }
+
+  async submitCreateGroupFromModal() {
+    const groupName = this.elements.createGroupNameInput?.value?.trim() || '';
+    if (!groupName) {
+      this.showToast('请输入分组名称', 'info');
+      this.elements.createGroupNameInput?.focus();
+      return;
+    }
+
+    const tabUuids = Array.from(this.createGroupSelectedTabUuids);
+    const created = await this.createGroup(groupName, tabUuids);
+    if (created) {
+      this.closeCreateGroupModal();
     }
   }
 
-  async createGroup(name) {
+  async createGroup(name, tabUuids = []) {
     try {
       const response = await chrome.runtime.sendMessage({
         action: 'createGroup',
-        name
+        data: {
+          name,
+          tabUuids
+        }
       });
 
       if (response.success) {
-        this.showToast('分组创建成功', 'success');
+        const assignedCount = Number.parseInt(response?.data?.assignedCount, 10) || 0;
+        this.showToast(
+          assignedCount > 0
+            ? `分组创建成功，已加入 ${assignedCount} 个标签页`
+            : '分组创建成功',
+          'success'
+        );
         this.refresh();
+        return true;
       } else {
         throw new Error(response.error || '创建分组失败');
       }
     } catch (error) {
       console.error('Failed to create group:', error);
       this.showToast('创建分组失败', 'error');
+      return false;
     }
   }
 

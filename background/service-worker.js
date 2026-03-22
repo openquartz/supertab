@@ -172,11 +172,22 @@ class SuperTabServiceWorker {
           break;
 
         case 'createGroup':
-          if (!data?.name) {
+          const createGroupName = typeof data?.name === 'string'
+            ? data.name.trim()
+            : (typeof request?.name === 'string' ? request.name.trim() : '');
+          if (!createGroupName) {
             sendResponse({ success: false, error: 'Group name is required' });
             break;
           }
-          const group = await this.tabManager.createCustomGroup(data.name);
+          const createGroupTabUuids = Array.from(new Set(
+            (Array.isArray(data?.tabUuids) ? data.tabUuids : [])
+              .filter(tabUuid => typeof tabUuid === 'string' && tabUuid.length > 0)
+          ));
+          const group = await this.tabManager.createCustomGroup(createGroupName, '', createGroupTabUuids);
+          if (!group) {
+            sendResponse({ success: false, error: 'Failed to create group' });
+            break;
+          }
           sendResponse({ success: true, data: group });
           this.scheduleSidebarRefresh('group_created');
           break;

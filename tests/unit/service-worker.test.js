@@ -128,6 +128,52 @@ describe('SuperTabServiceWorker', () => {
     });
   });
 
+  test('creates custom group with selected tab uuids', async () => {
+    const serviceWorker = new SuperTabServiceWorker();
+    const sendResponse = jest.fn();
+    mockTabManager.createCustomGroup.mockResolvedValue({
+      id: 'custom_1',
+      name: 'Work',
+      assignedCount: 2
+    });
+
+    await serviceWorker.handleMessage({
+      action: 'createGroup',
+      data: {
+        name: 'Work',
+        tabUuids: ['tab-1', 'tab-2', 'tab-2']
+      }
+    }, null, sendResponse);
+
+    expect(mockTabManager.createCustomGroup).toHaveBeenCalledWith('Work', '', ['tab-1', 'tab-2']);
+    expect(sendResponse).toHaveBeenCalledWith({
+      success: true,
+      data: {
+        id: 'custom_1',
+        name: 'Work',
+        assignedCount: 2
+      }
+    });
+  });
+
+  test('returns error when custom group creation fails', async () => {
+    const serviceWorker = new SuperTabServiceWorker();
+    const sendResponse = jest.fn();
+    mockTabManager.createCustomGroup.mockResolvedValue(null);
+
+    await serviceWorker.handleMessage({
+      action: 'createGroup',
+      data: {
+        name: 'Work'
+      }
+    }, null, sendResponse);
+
+    expect(sendResponse).toHaveBeenCalledWith({
+      success: false,
+      error: 'Failed to create group'
+    });
+  });
+
   test('deletes group tabs through tab manager', async () => {
     const serviceWorker = new SuperTabServiceWorker();
     const sendResponse = jest.fn();

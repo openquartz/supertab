@@ -867,6 +867,97 @@ tab-item {
     gap: var(--tf-spacing-sm);
 }
 
+.tf-form-field {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.tf-form-field label {
+    font-size: var(--tf-font-size-xs);
+    color: var(--tf-text-secondary);
+}
+
+.tf-create-group-picker-actions {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+.tf-create-group-select-all {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--tf-spacing-sm);
+    font-size: var(--tf-font-size-xs);
+    color: var(--tf-text-secondary);
+}
+
+.tf-create-group-select-all input[type="checkbox"] {
+    width: 14px;
+    height: 14px;
+    margin: 0;
+    accent-color: var(--tf-primary);
+}
+
+.tf-create-group-tab-list {
+    border: 1px solid var(--tf-border-light);
+    border-radius: var(--tf-radius);
+    background: var(--tf-bg-secondary);
+    min-height: 140px;
+    max-height: 260px;
+    overflow-y: auto;
+}
+
+.tf-create-group-tab-list-empty {
+    color: var(--tf-text-muted);
+    font-size: var(--tf-font-size-sm);
+    padding: var(--tf-spacing-md);
+    text-align: center;
+}
+
+.tf-create-group-tab-item {
+    display: flex;
+    align-items: flex-start;
+    gap: var(--tf-spacing-sm);
+    padding: 8px var(--tf-spacing-sm);
+    border-bottom: 1px solid var(--tf-border-light);
+}
+
+.tf-create-group-tab-item:last-child {
+    border-bottom: none;
+}
+
+.tf-create-group-tab-item input[type="checkbox"] {
+    width: 14px;
+    height: 14px;
+    margin-top: 2px;
+    accent-color: var(--tf-primary);
+    flex-shrink: 0;
+}
+
+.tf-create-group-tab-text {
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+    gap: 1px;
+}
+
+.tf-create-group-tab-title {
+    font-size: var(--tf-font-size-sm);
+    color: var(--tf-text-primary);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.tf-create-group-tab-meta {
+    font-size: var(--tf-font-size-xs);
+    color: var(--tf-text-muted);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
 /* Empty State */
 .tf-empty-state {
     display: flex;
