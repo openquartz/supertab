@@ -1,7 +1,13 @@
 const GroupingEngine = require('../../utils/grouping-engine');
+const RuleEngine = require('../../utils/rule-engine');
+const RuleManager = require('../../utils/rule-manager');
+const AutoGrouper = require('../../background/auto-grouper');
 
-// Make GroupingEngine available globally (as the service worker would)
+// Make components available globally (as the service worker would)
 global.GroupingEngine = GroupingEngine;
+global.RuleEngine = RuleEngine;
+global.RuleManager = RuleManager;
+global.AutoGrouper = AutoGrouper;
 
 const TabManager = require('../../background/tab-manager');
 

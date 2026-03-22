@@ -6,6 +6,12 @@ class TabManager {
     this.storageManager = storageManager;
     this.privacyManager = privacyManager;
     this.groupingEngine = new GroupingEngine();
+
+    // Initialize rule management components
+    this.ruleEngine = new RuleEngine();
+    this.ruleManager = new RuleManager(storageManager);
+    this.autoGrouper = new AutoGrouper(this, this.ruleEngine, this.ruleManager);
+
     this.activeTabs = new Map();
     this.tabMetrics = {
       totalTabs: 0,
@@ -19,6 +25,9 @@ class TabManager {
 
     // Setup event listeners
     this.setupEventListeners();
+
+    // Initialize AutoGrouper
+    await this.autoGrouper.initialize();
 
     // Load existing tabs from storage
     await this.loadExistingTabs();
@@ -916,6 +925,137 @@ class TabManager {
 
   handleTabUpdatedEvent(tabData) {
     console.log('📝 Tab updated event:', tabData.title);
+  }
+
+  // Rule management methods
+  async createGroupingRule(ruleData) {
+    try {
+      console.log('🔧 Creating grouping rule:', ruleData.name);
+      const rule = await this.ruleManager.createRule(ruleData);
+
+      if (rule) {
+        this.eventBus.emit('grouping_rule_created', { rule });
+        console.log('✅ Grouping rule created:', rule.name);
+        return rule;
+      }
+
+      return null;
+    } catch (error) {
+      console.error('❌ Error creating grouping rule:', error);
+      throw error;
+    }
+  }
+
+  async getAllGroupingRules() {
+    try {
+      console.log('🔍 Getting all grouping rules');
+      const rules = await this.ruleManager.getAllRules();
+      return rules;
+    } catch (error) {
+      console.error('❌ Error getting grouping rules:', error);
+      return {};
+    }
+  }
+
+  async updateGroupingRule(ruleId, updates) {
+    try {
+      console.log('🔧 Updating grouping rule:', ruleId);
+      const updatedRule = await this.ruleManager.updateRule(ruleId, updates);
+
+      if (updatedRule) {
+        this.eventBus.emit('grouping_rule_updated', { rule: updatedRule });
+        console.log('✅ Grouping rule updated:', updatedRule.name);
+        return updatedRule;
+      }
+
+      return null;
+    } catch (error) {
+      console.error('❌ Error updating grouping rule:', error);
+      throw error;
+    }
+  }
+
+  async deleteGroupingRule(ruleId) {
+    try {
+      console.log('🗑️ Deleting grouping rule:', ruleId);
+      const deleted = await this.ruleManager.deleteRule(ruleId);
+
+      if (deleted) {
+        this.eventBus.emit('grouping_rule_deleted', { ruleId });
+        console.log('✅ Grouping rule deleted:', ruleId);
+        return true;
+      }
+
+      return false;
+    } catch (error) {
+      console.error('❌ Error deleting grouping rule:', error);
+      return false;
+    }
+  }
+
+  async toggleGroupingRule(ruleId) {
+    try {
+      console.log('🔄 Toggling grouping rule:', ruleId);
+      const updatedRule = await this.ruleManager.toggleRuleEnabled(ruleId);
+
+      if (updatedRule) {
+        this.eventBus.emit('grouping_rule_toggled', {
+          rule: updatedRule,
+          enabled: updatedRule.enabled
+        });
+        console.log('✅ Grouping rule toggled:', updatedRule.name, '->', updatedRule.enabled ? 'enabled' : 'disabled');
+        return updatedRule;
+      }
+
+      return null;
+    } catch (error) {
+      console.error('❌ Error toggling grouping rule:', error);
+      throw error;
+    }
+  }
+
+  async reorderGroupingRules(ruleIds) {
+    try {
+      console.log('🔄 Reordering grouping rules:', ruleIds.length, 'rules');
+      const success = await this.ruleManager.reorderRules(ruleIds);
+
+      if (success) {
+        this.eventBus.emit('grouping_rules_reordered', { ruleIds });
+        console.log('✅ Grouping rules reordered');
+        return true;
+      }
+
+      return false;
+    } catch (error) {
+      console.error('❌ Error reordering grouping rules:', error);
+      return false;
+    }
+  }
+
+  async applyRulesToExistingTabs() {
+    try {
+      console.log('🔄 Applying rules to existing tabs');
+      const assignedCount = await this.autoGrouper.processExistingTabs();
+
+      const result = {
+        success: true,
+        assignedCount,
+        timestamp: Date.now()
+      };
+
+      this.eventBus.emit('rules_applied_to_existing_tabs', result);
+      console.log('✅ Rules applied to existing tabs:', assignedCount, 'tabs assigned');
+      return result;
+    } catch (error) {
+      console.error('❌ Error applying rules to existing tabs:', error);
+      const errorResult = {
+        success: false,
+        error: error.message,
+        timestamp: Date.now()
+      };
+      this.eventBus.emit('rules_applied_to_existing_tabs', errorResult);
+      return errorResult;
+    }
   }
 }
 
