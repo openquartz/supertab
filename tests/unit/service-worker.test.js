@@ -41,6 +41,15 @@ describe('SuperTabServiceWorker', () => {
       importData: jest.fn().mockResolvedValue(true)
     }));
     global.TabManager = jest.fn(() => mockTabManager);
+    global.RuleEngine = jest.fn(() => ({
+      findMatchingRule: jest.fn().mockReturnValue(null)
+    }));
+    global.RuleManager = jest.fn(() => ({
+      getAllRules: jest.fn().mockResolvedValue({})
+    }));
+    global.AutoGrouper = jest.fn(() => ({
+      initialize: jest.fn().mockResolvedValue(undefined)
+    }));
 
     global.chrome = {
       action: {

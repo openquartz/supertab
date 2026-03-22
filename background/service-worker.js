@@ -4,6 +4,12 @@ importScripts('../utils/privacy-manager.js');
 importScripts('./storage-manager.js');
 importScripts('../utils/grouping-engine.js');
 importScripts('./tab-manager.js');
+importScripts('../utils/rule-engine.js');
+importScripts('../utils/rule-manager.js');
+importScripts('./auto-grouper.js');
+importScripts('../utils/rule-engine.js');
+importScripts('../utils/rule-manager.js');
+importScripts('./auto-grouper.js');
 
 class SuperTabServiceWorker {
   constructor() {
@@ -11,6 +17,9 @@ class SuperTabServiceWorker {
     this.privacyManager = new PrivacyManager();
     this.storageManager = new StorageManager(this.privacyManager);
     this.tabManager = null;
+    this.ruleEngine = null;
+    this.ruleManager = null;
+    this.autoGrouper = null;
     this.initialized = false;
     this.initializationPromise = null;
     this.tabWatcher = null;
@@ -42,6 +51,15 @@ class SuperTabServiceWorker {
         // Initialize tab manager
         this.tabManager = new TabManager(this.eventBus, this.storageManager, this.privacyManager);
         await this.tabManager.initialize();
+
+        // Initialize rule engine and manager
+        this.ruleEngine = new RuleEngine();
+        this.ruleManager = new RuleManager(this.storageManager);
+
+        // Initialize auto grouper
+        this.autoGrouper = new AutoGrouper(this.tabManager, this.ruleEngine, this.ruleManager);
+        await this.autoGrouper.initialize();
+
         this.setupDataSyncEvents();
 
         this.initialized = true;
