@@ -48,12 +48,14 @@ class GroupItem extends HTMLElement {
       : '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"></polyline></svg>';
 
     this.innerHTML = `
-      <div class="tf-group-header" data-action="toggle-collapse">
-        <div class="tf-group-title">
-          <span class="tf-group-icon">${iconSvg}</span>
-          <span class="tf-group-name">${this.escapeHtml(this.groupData.name)}</span>
-          <span class="tf-group-count">${tabCount}</span>
-        </div>
+      <div class="tf-group-header">
+        <button class="tf-group-open" type="button" data-action="open-group" aria-label="查看分组">
+          <span class="tf-group-title">
+            <span class="tf-group-icon">${iconSvg}</span>
+            <span class="tf-group-name">${this.escapeHtml(this.groupData.name)}</span>
+            <span class="tf-group-count">${tabCount}</span>
+          </span>
+        </button>
         <div class="tf-group-actions">
           <button class="tf-btn tf-btn-icon tf-group-collapse" title="${this.collapsed ? '展开' : '折叠'}" data-action="toggle-collapse" aria-label="${this.collapsed ? '展开' : '折叠'}">
             ${chevronSvg}
@@ -152,6 +154,9 @@ class GroupItem extends HTMLElement {
 
   handleAction(action) {
     switch (action) {
+      case 'open-group':
+        this.requestGroupOpen();
+        break;
       case 'toggle-collapse':
         this.toggleCollapse();
         break;
@@ -161,6 +166,22 @@ class GroupItem extends HTMLElement {
       case 'show-menu':
         this.showGroupMenu();
         break;
+    }
+  }
+
+  requestGroupOpen() {
+    const openEvent = new CustomEvent('group-open-request', {
+      detail: {
+        group: this.groupData,
+        element: this
+      },
+      bubbles: true,
+      cancelable: true
+    });
+
+    const shouldContinueDefault = this.dispatchEvent(openEvent);
+    if (shouldContinueDefault) {
+      this.toggleCollapse();
     }
   }
 

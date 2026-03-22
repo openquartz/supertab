@@ -14,7 +14,8 @@ class PrivacyManager {
       },
       preferences: {
         showFavicons: true,
-        enableNotifications: true
+        enableNotifications: true,
+        groupDisplayMode: 'sidebar'
       }
     };
     this._ready = this.initialize();
@@ -155,7 +156,8 @@ class PrivacyManager {
       },
       preferences: {
         showFavicons: true,
-        enableNotifications: true
+        enableNotifications: true,
+        groupDisplayMode: 'sidebar'
       }
     };
 

@@ -2,7 +2,12 @@
 
 class SuperTabSidebar {
   constructor() {
-    this.currentGroup = 'domain';
+    const routeParams = this.parseRouteParams();
+    this.currentGroup = routeParams.groupType;
+    this.focusGroupId = routeParams.groupId;
+    this.singleGroupMode = routeParams.singleGroup;
+    this.isStandaloneTabView = routeParams.displayMode === 'tab';
+    this.groupDisplayMode = 'sidebar';
     this.searchQuery = '';
     this.tabs = [];
     this.groups = [];
@@ -23,6 +28,9 @@ class SuperTabSidebar {
 
     this.initializeElements();
     this.setupEventListeners();
+    this.syncGroupTypeUI();
+    this.applyStandaloneLayout();
+    this.loadDisplayPreferences();
     this.loadData();
   }
 
@@ -30,6 +38,7 @@ class SuperTabSidebar {
     this.elements = {
       searchInput: document.getElementById('search-input'),
       groupButtons: document.querySelectorAll('.tf-group-btn'),
+      groupSelector: document.querySelector('.tf-group-selector'),
       content: document.querySelector('.tf-content'),
       groupContainers: document.querySelectorAll('.tf-group-container'),
       domainGroups: document.getElementById('domain-groups'),
@@ -290,6 +299,19 @@ class SuperTabSidebar {
       return false;
     });
 
+    if (chrome.storage?.onChanged?.addListener) {
+      chrome.storage.onChanged.addListener((changes, areaName) => {
+        if (areaName !== 'local') {
+          return;
+        }
+        const settingsChange = changes?.['tabflow:settings'];
+        if (!settingsChange) {
+          return;
+        }
+        this.updateDisplayPreferenceFromSettings(settingsChange.newValue);
+      });
+    }
+
     console.log('🎯 Event listeners setup complete');
   }
 
@@ -308,6 +330,7 @@ class SuperTabSidebar {
         const payload = response.data && typeof response.data === 'object' ? response.data : {};
         this.tabs = Array.isArray(payload.tabs) ? payload.tabs : [];
         this.groups = Array.isArray(payload.groups) ? payload.groups : [];
+        this.applyGroupScope();
         this.syncSelectionWithTabs();
         this.renderGroups();
         this.updateStats();
@@ -376,6 +399,9 @@ class SuperTabSidebar {
 
     // Load data for the new group type
     if (groupType !== previousGroup) {
+      if (this.singleGroupMode) {
+        this.focusGroupId = '';
+      }
       this.loadData();
     }
 
@@ -1530,6 +1556,17 @@ class SuperTabSidebar {
   }
 
   bindGroupElementEvents(groupElement) {
+    groupElement.addEventListener('group-open-request', (e) => {
+      const group = e?.detail?.group;
+      if (!group) {
+        return;
+      }
+      if (this.shouldOpenGroupInStandaloneTab()) {
+        e.preventDefault();
+        this.openGroupInStandaloneTab(group);
+      }
+    });
+
     groupElement.addEventListener('show-context-menu', (e) => {
       const detail = e?.detail || {};
       const tab = detail.tab || {};
@@ -1624,6 +1661,10 @@ class SuperTabSidebar {
   }
 
   getEmptyStateHTML() {
+    if (this.singleGroupMode && this.focusGroupId) {
+      return '<div class="tf-empty-state"><p>未找到该分组或分组暂无标签页</p></div>';
+    }
+
     const messages = {
       domain: '<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" opacity="0.5"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg><p>暂无按域名分组的标签页</p>',
       date: '<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" opacity="0.5"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg><p>暂无按时间分组的标签页</p>',
@@ -1632,6 +1673,108 @@ class SuperTabSidebar {
     };
 
     return `<div class="tf-empty-state">${messages[this.currentGroup] || '<p>暂无数据</p>'}</div>`;
+  }
+
+  parseRouteParams() {
+    const params = new URLSearchParams(window.location.search || '');
+    const groupType = params.get('groupType');
+    const validGroupTypes = new Set(['domain', 'date', 'custom', 'session']);
+    const normalizedGroupType = validGroupTypes.has(groupType) ? groupType : 'domain';
+    const groupId = (params.get('groupId') || '').trim();
+    const singleGroupRaw = (params.get('singleGroup') || '').trim().toLowerCase();
+    const displayMode = (params.get('display') || '').trim().toLowerCase();
+
+    return {
+      groupType: normalizedGroupType,
+      groupId,
+      singleGroup: singleGroupRaw === '1' || singleGroupRaw === 'true',
+      displayMode: displayMode === 'tab' ? 'tab' : 'sidebar'
+    };
+  }
+
+  syncGroupTypeUI() {
+    this.elements.groupButtons.forEach(btn => {
+      const isActive = btn.dataset.group === this.currentGroup;
+      btn.classList.toggle('active', isActive);
+    });
+
+    this.elements.groupContainers.forEach(container => {
+      const isActive = container.id === `${this.currentGroup}-groups`;
+      container.classList.toggle('active', isActive);
+    });
+  }
+
+  applyStandaloneLayout() {
+    if (!this.singleGroupMode) {
+      return;
+    }
+
+    if (this.elements.groupSelector) {
+      this.elements.groupSelector.classList.add('tf-hidden');
+    }
+  }
+
+  applyGroupScope() {
+    if (!this.singleGroupMode || !this.focusGroupId) {
+      return;
+    }
+
+    const targetGroupId = String(this.focusGroupId);
+    this.groups = (Array.isArray(this.groups) ? this.groups : []).filter(
+      group => String(group?.id || '') === targetGroupId
+    );
+
+    if (this.groups.length === 0) {
+      this.tabs = [];
+      return;
+    }
+
+    const visibleTabUuids = new Set(
+      (this.groups[0].tabs || [])
+        .map(tab => tab?.uuid)
+        .filter(Boolean)
+    );
+    this.tabs = (Array.isArray(this.tabs) ? this.tabs : []).filter(tab => visibleTabUuids.has(tab?.uuid));
+  }
+
+  async loadDisplayPreferences() {
+    try {
+      const response = await this.sendMessageWithRetry({
+        action: 'getPrivacySettings'
+      });
+      if (response?.success) {
+        this.updateDisplayPreferenceFromSettings(response.data);
+      }
+    } catch (error) {
+      console.warn('Failed to load display preferences, fallback to sidebar mode:', error);
+    }
+  }
+
+  updateDisplayPreferenceFromSettings(rawSettings) {
+    const mode = rawSettings?.preferences?.groupDisplayMode;
+    this.groupDisplayMode = mode === 'tab' ? 'tab' : 'sidebar';
+  }
+
+  shouldOpenGroupInStandaloneTab() {
+    return this.groupDisplayMode === 'tab' && !this.isStandaloneTabView;
+  }
+
+  async openGroupInStandaloneTab(group) {
+    if (!group?.id) {
+      return;
+    }
+
+    try {
+      const url = new URL(chrome.runtime.getURL('ui/sidebar/sidebar.html'));
+      url.searchParams.set('groupType', this.currentGroup);
+      url.searchParams.set('groupId', String(group.id));
+      url.searchParams.set('singleGroup', '1');
+      url.searchParams.set('display', 'tab');
+      await chrome.tabs.create({ url: url.toString(), active: true });
+    } catch (error) {
+      console.error('Failed to open group in standalone tab:', error);
+      this.showToast('打开分组页失败', 'error');
+    }
   }
 
   getGroupIcon(type) {

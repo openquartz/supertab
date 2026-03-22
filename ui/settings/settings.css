@@ -121,6 +121,7 @@
 /* 输入框样式 */
 .tf-setting-control input[type="text"],
 .tf-setting-control input[type="number"],
+.tf-setting-control select,
 .tf-setting-control textarea {
     padding: 6px 8px;
     border: 1px solid var(--tf-border);
@@ -134,12 +135,14 @@
 }
 
 .tf-setting-control input[type="text"]:hover,
-.tf-setting-control input[type="number"]:hover {
+.tf-setting-control input[type="number"]:hover,
+.tf-setting-control select:hover {
     border-color: #5f6368;
 }
 
 .tf-setting-control input[type="text"]:focus,
 .tf-setting-control input[type="number"]:focus,
+.tf-setting-control select:focus,
 .tf-setting-control textarea:focus {
     border-color: var(--tf-primary);
     box-shadow: 0 0 0 2px var(--tf-focus-ring);

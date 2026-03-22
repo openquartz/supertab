@@ -49,13 +49,10 @@ class SuperTabServiceWorker {
         this.tabManager = new TabManager(this.eventBus, this.storageManager, this.privacyManager);
         await this.tabManager.initialize();
 
-        // Initialize rule engine and manager
-        this.ruleEngine = new RuleEngine();
-        this.ruleManager = new RuleManager(this.storageManager);
-
-        // Initialize auto grouper
-        this.autoGrouper = new AutoGrouper(this.tabManager, this.ruleEngine, this.ruleManager);
-        await this.autoGrouper.initialize();
+        // Reuse rule/auto-group instances created by TabManager to avoid duplicate listeners.
+        this.ruleEngine = this.tabManager.ruleEngine || new RuleEngine();
+        this.ruleManager = this.tabManager.ruleManager || new RuleManager(this.storageManager);
+        this.autoGrouper = this.tabManager.autoGrouper || new AutoGrouper(this.tabManager, this.ruleEngine, this.ruleManager);
 
         this.setupDataSyncEvents();
 
@@ -312,6 +309,16 @@ class SuperTabServiceWorker {
           sendResponse({ success: true, data: bookmarkFolders });
           break;
 
+        case 'applyRulesToExistingTabs':
+          if (typeof this.tabManager.applyRulesToExistingTabs !== 'function') {
+            sendResponse({ success: false, error: 'applyRulesToExistingTabs is not supported' });
+            break;
+          }
+          const applyRulesResult = await this.tabManager.applyRulesToExistingTabs();
+          sendResponse({ success: true, data: applyRulesResult });
+          this.scheduleSidebarRefresh('rules_applied_to_existing_tabs');
+          break;
+
         case 'activateTab':
           const activateTabId = Number.parseInt(data?.tabId ?? request?.tabId, 10);
           if (!Number.isInteger(activateTabId)) {
@@ -538,6 +545,15 @@ class SuperTabServiceWorker {
     try {
       console.log('🔄 Performing initial tab sync...');
       await this.tabManager.ensureCurrentTabsSynced();
+
+      // Apply smart grouping rules to already-open tabs so rules take effect immediately.
+      if (typeof this.tabManager.applyRulesToExistingTabs === 'function') {
+        const applyResult = await this.tabManager.applyRulesToExistingTabs();
+        if (applyResult?.success && applyResult.assignedCount > 0) {
+          console.log(`🤖 Smart grouping applied to ${applyResult.assignedCount} existing tabs`);
+        }
+      }
+
       this.scheduleSidebarRefresh('initial_sync');
 
       console.log('✅ Initial tab sync completed');
@@ -672,7 +688,8 @@ class SuperTabServiceWorker {
       },
       preferences: {
         showFavicons: true,
-        enableNotifications: true
+        enableNotifications: true,
+        groupDisplayMode: 'sidebar'
       }
     };
 

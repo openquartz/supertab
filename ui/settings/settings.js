@@ -6,7 +6,8 @@ class SuperTabSettings {
       encryptNotes: false,
       excludeDomains: [],
       autoCleanupDays: 30,
-      enableLogging: false
+      enableLogging: false,
+      groupDisplayMode: 'sidebar'
     };
 
     this.initializeElements();
@@ -44,7 +45,8 @@ class SuperTabSettings {
       resetSettings: document.getElementById('reset-settings'),
       version: document.getElementById('version'),
       feedbackLink: document.getElementById('feedback-link'),
-      manageRules: document.getElementById('manage-rules')
+      manageRules: document.getElementById('manage-rules'),
+      groupDisplayMode: document.getElementById('group-display-mode')
     };
   }
 
@@ -100,6 +102,9 @@ class SuperTabSettings {
     this.elements.encryptNotes.checked = Boolean(this.settings.encryptNotes);
     this.elements.excludeDomains.value = (this.settings.excludeDomains || []).join('\n');
     this.elements.autoCleanup.value = String(this.settings.autoCleanupDays ?? 30);
+    if (this.elements.groupDisplayMode) {
+      this.elements.groupDisplayMode.value = this.settings.groupDisplayMode === 'tab' ? 'tab' : 'sidebar';
+    }
 
     // 更新版本信息
     this.elements.version.textContent = chrome.runtime.getManifest().version;
@@ -114,7 +119,8 @@ class SuperTabSettings {
           .split('\n')
           .map(domain => domain.trim())
           .filter(domain => domain.length > 0),
-        autoCleanupDays: parseInt(this.elements.autoCleanup.value) || 0
+        autoCleanupDays: parseInt(this.elements.autoCleanup.value) || 0,
+        groupDisplayMode: this.elements.groupDisplayMode?.value === 'tab' ? 'tab' : 'sidebar'
       };
 
       // 保存设置
@@ -220,7 +226,8 @@ class SuperTabSettings {
           encryptNotes: false,
           excludeDomains: [],
           autoCleanupDays: 30,
-          enableLogging: false
+          enableLogging: false,
+          groupDisplayMode: 'sidebar'
         };
         this.updateUI();
       }
@@ -239,7 +246,8 @@ class SuperTabSettings {
       encryptNotes: false,
       excludeDomains: [],
       autoCleanupDays: 30,
-      enableLogging: false
+      enableLogging: false,
+      groupDisplayMode: 'sidebar'
     };
 
     this.updateUI();
@@ -254,7 +262,8 @@ class SuperTabSettings {
       encryptNotes: Boolean(privacy.encryptNotes),
       excludeDomains: Array.isArray(privacy.excludeDomains) ? privacy.excludeDomains : [],
       autoCleanupDays: Number.isFinite(autoCleanupDays) ? autoCleanupDays : 30,
-      enableLogging: Boolean(rawSettings?.preferences?.enableLogging)
+      enableLogging: Boolean(rawSettings?.preferences?.enableLogging),
+      groupDisplayMode: rawSettings?.preferences?.groupDisplayMode === 'tab' ? 'tab' : 'sidebar'
     };
   }
 
@@ -264,6 +273,9 @@ class SuperTabSettings {
         encryptNotes: Boolean(flatSettings.encryptNotes),
         excludeDomains: Array.isArray(flatSettings.excludeDomains) ? flatSettings.excludeDomains : [],
         autoCleanupDays: Number.parseInt(flatSettings.autoCleanupDays, 10) || 0
+      },
+      preferences: {
+        groupDisplayMode: flatSettings.groupDisplayMode === 'tab' ? 'tab' : 'sidebar'
       }
     };
   }
@@ -298,16 +310,28 @@ class SuperTabSettings {
       const html = await response.text();
 
       const container = document.getElementById('rules-page-container');
-      container.innerHTML = html;
+      const parser = new DOMParser();
+      const parsed = parser.parseFromString(html, 'text/html');
+      const rulesApp = parsed.querySelector('#rules-app');
+      container.innerHTML = rulesApp ? rulesApp.outerHTML : html;
 
       // 加载CSS
-      const link = document.createElement('link');
-      link.rel = 'stylesheet';
-      link.href = chrome.runtime.getURL('ui/rules/rules.css');
-      document.head.appendChild(link);
+      if (!document.getElementById('rules-page-styles')) {
+        const link = document.createElement('link');
+        link.id = 'rules-page-styles';
+        link.rel = 'stylesheet';
+        link.href = chrome.runtime.getURL('ui/rules/rules.css');
+        document.head.appendChild(link);
+      }
 
       // 加载JavaScript
+      const existingScript = document.getElementById('rules-page-script');
+      if (existingScript) {
+        existingScript.remove();
+      }
+
       const script = document.createElement('script');
+      script.id = 'rules-page-script';
       script.src = chrome.runtime.getURL('ui/rules/rules-manager.js');
       script.onload = () => {
         console.log('✅ Rules page loaded');

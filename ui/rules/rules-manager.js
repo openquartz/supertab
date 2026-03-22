@@ -581,6 +581,7 @@ class RulesManager {
             this.renderRules();
             this.makeRulesSortable();
             this.hideRuleEditor();
+            await this.applyRulesToExistingTabs();
 
             console.log('规则保存成功:', rule);
 
@@ -701,6 +702,7 @@ class RulesManager {
 
         try {
             await chrome.storage.sync.set({ tabRules: this.rules });
+            await this.applyRulesToExistingTabs();
             this.renderRules();
         } catch (error) {
             console.error('切换规则状态失败:', error);
@@ -728,6 +730,7 @@ class RulesManager {
         try {
             this.rules = this.rules.filter(r => r.id !== ruleId);
             await chrome.storage.sync.set({ tabRules: this.rules });
+            await this.applyRulesToExistingTabs();
 
             this.renderRules();
             this.makeRulesSortable();
@@ -749,10 +752,24 @@ class RulesManager {
 
         try {
             await chrome.storage.sync.set({ tabRules: this.rules });
+            await this.applyRulesToExistingTabs();
             this.renderRules();
             this.makeRulesSortable();
         } catch (error) {
             console.error('重新排序规则失败:', error);
+        }
+    }
+
+    async applyRulesToExistingTabs() {
+        try {
+            const response = await chrome.runtime.sendMessage({
+                action: 'applyRulesToExistingTabs'
+            });
+            if (!response?.success) {
+                console.warn('应用规则到现有标签页失败:', response?.error || 'unknown error');
+            }
+        } catch (error) {
+            console.warn('触发规则应用失败:', error);
         }
     }
 
@@ -780,7 +797,22 @@ class RulesManager {
     }
 }
 
-// 初始化应用
-document.addEventListener('DOMContentLoaded', () => {
+function bootstrapRulesManager() {
+    // Prevent duplicate initialization when the page script is injected multiple times.
+    if (window.rulesManager) {
+        return;
+    }
+
+    // The rules UI may be injected dynamically after DOMContentLoaded has already fired.
+    if (!document.getElementById('rules-container')) {
+        return;
+    }
+
     window.rulesManager = new RulesManager();
-});
+}
+
+if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', bootstrapRulesManager, { once: true });
+} else {
+    bootstrapRulesManager();
+}

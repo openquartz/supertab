@@ -43,13 +43,51 @@ class RuleEngine {
    * @returns {boolean} 是否匹配
    */
   matchesCondition(tab, condition) {
+    if (!condition || typeof condition !== 'object') {
+      return false;
+    }
+
     const fieldValue = this.getFieldValue(tab, condition.field);
     if (!fieldValue) return false;
 
-    const searchValue = condition.caseSensitive ? fieldValue : fieldValue.toLowerCase();
-    const keyword = condition.caseSensitive ? condition.keyword : condition.keyword.toLowerCase();
+    const rawExpectedValue = typeof condition.value === 'string'
+      ? condition.value
+      : (typeof condition.keyword === 'string' ? condition.keyword : '');
+    const expectedValue = rawExpectedValue.trim();
+    if (!expectedValue) {
+      return false;
+    }
 
-    return searchValue.includes(keyword);
+    const operator = typeof condition.operator === 'string' && condition.operator.trim()
+      ? condition.operator
+      : 'contains';
+    const caseSensitive = Boolean(condition.caseSensitive);
+
+    if (operator === 'regex') {
+      try {
+        const flags = caseSensitive ? '' : 'i';
+        return new RegExp(expectedValue, flags).test(fieldValue);
+      } catch (error) {
+        console.warn('Invalid regex condition:', expectedValue, error);
+        return false;
+      }
+    }
+
+    const searchValue = caseSensitive ? fieldValue : fieldValue.toLowerCase();
+    const testValue = caseSensitive ? expectedValue : expectedValue.toLowerCase();
+
+    switch (operator) {
+      case 'contains':
+        return searchValue.includes(testValue);
+      case 'equals':
+        return searchValue === testValue;
+      case 'startsWith':
+        return searchValue.startsWith(testValue);
+      case 'endsWith':
+        return searchValue.endsWith(testValue);
+      default:
+        return searchValue.includes(testValue);
+    }
   }
 
   /**
@@ -66,6 +104,13 @@ class RuleEngine {
         return tab.url || '';
       case 'domain':
         return this.extractDomain(tab.url || '');
+      case 'path':
+        try {
+          const urlObj = new URL(tab.url || '');
+          return urlObj.pathname || '';
+        } catch (error) {
+          return '';
+        }
       default:
         return '';
     }
@@ -79,7 +124,7 @@ class RuleEngine {
   extractDomain(url) {
     try {
       const urlObj = new URL(url);
-      return urlObj.host; // 使用host而不是hostname，包含端口信息
+      return urlObj.host;
     } catch (error) {
       console.warn('Failed to extract domain from URL:', url, error);
       return '';
@@ -111,7 +156,11 @@ class RuleEngine {
    * @returns {Array} 排序后的规则数组
    */
   sortRulesByPriority(rules) {
-    return [...rules].sort((a, b) => a.priority - b.priority);
+    return [...rules].sort((a, b) => {
+      const priorityA = Number.isFinite(Number(a?.priority)) ? Number(a.priority) : Number.MAX_SAFE_INTEGER;
+      const priorityB = Number.isFinite(Number(b?.priority)) ? Number(b.priority) : Number.MAX_SAFE_INTEGER;
+      return priorityA - priorityB;
+    });
   }
 }
 

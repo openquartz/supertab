@@ -328,6 +328,20 @@ tab-item {
     min-width: 0;
 }
 
+.tf-group-open {
+    display: flex;
+    align-items: center;
+    flex: 1;
+    min-width: 0;
+    border: none;
+    padding: 0;
+    margin: 0;
+    background: transparent;
+    color: inherit;
+    text-align: left;
+    cursor: pointer;
+}
+
 .tf-group-icon {
     font-size: var(--tf-font-size-md);
     flex-shrink: 0;
