@@ -1,0 +1,513 @@
+/* ui/rules/rules.css - 规则管理页面样式 */
+
+/* 规则列表头部 */
+.tf-rules-header {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    padding: var(--tf-spacing-md) 0;
+    border-bottom: 1px solid var(--tf-border-light);
+    margin-bottom: var(--tf-spacing-md);
+}
+
+.tf-rules-header-info h2 {
+    font-size: var(--tf-font-size-lg);
+    font-weight: 500;
+    margin: 0 0 var(--tf-spacing-xs) 0;
+    color: var(--tf-text-primary);
+}
+
+.tf-rules-header-info p {
+    font-size: var(--tf-font-size-sm);
+    color: var(--tf-text-secondary);
+    margin: 0;
+    line-height: 1.4;
+}
+
+/* 规则列表容器 */
+.tf-rules-container {
+    padding: 0;
+    overflow-y: auto;
+    min-height: 0;
+    flex: 1;
+}
+
+/* 规则项 */
+.tf-rule-item {
+    background: var(--tf-bg-primary);
+    border: 1px solid var(--tf-border-light);
+    border-radius: var(--tf-radius-lg);
+    margin-bottom: var(--tf-spacing-md);
+    transition: var(--tf-transition);
+    overflow: hidden;
+}
+
+.tf-rule-item:hover {
+    box-shadow: var(--tf-shadow);
+    border-color: var(--tf-border);
+}
+
+.tf-rule-item.dragging {
+    opacity: 0.5;
+    transform: scale(0.98);
+    box-shadow: var(--tf-shadow-lg);
+}
+
+.tf-rule-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: var(--tf-spacing-md);
+    background: var(--tf-bg-secondary);
+    border-bottom: 1px solid var(--tf-border-light);
+    min-height: 56px;
+}
+
+.tf-rule-info {
+    flex: 1;
+    margin-right: var(--tf-spacing-md);
+}
+
+.tf-rule-name {
+    font-weight: 500;
+    font-size: var(--tf-font-size-md);
+    color: var(--tf-text-primary);
+    margin-bottom: var(--tf-spacing-xs);
+}
+
+.tf-rule-details {
+    font-size: var(--tf-font-size-xs);
+    color: var(--tf-text-secondary);
+    display: flex;
+    gap: var(--tf-spacing-md);
+    flex-wrap: wrap;
+}
+
+.tf-rule-detail-item {
+    display: flex;
+    align-items: center;
+    gap: var(--tf-spacing-xs);
+}
+
+.tf-rule-detail-label {
+    font-weight: 500;
+}
+
+.tf-rule-detail-value {
+    background: var(--tf-bg-active);
+    padding: 2px 6px;
+    border-radius: 4px;
+    font-family: monospace;
+}
+
+.tf-rule-actions {
+    display: flex;
+    align-items: center;
+    gap: var(--tf-spacing-sm);
+}
+
+.tf-rule-toggle {
+    margin-right: var(--tf-spacing-sm);
+}
+
+.tf-rule-btn {
+    width: 28px;
+    height: 28px;
+    padding: 0;
+    border-radius: var(--tf-radius);
+    background: transparent;
+    color: var(--tf-text-secondary);
+    cursor: pointer;
+    transition: var(--tf-transition);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.tf-rule-btn:hover {
+    background: var(--tf-bg-hover);
+    color: var(--tf-text-primary);
+}
+
+.tf-rule-btn.drag-handle {
+    cursor: grab;
+}
+
+.tf-rule-btn.drag-handle:active {
+    cursor: grabbing;
+}
+
+.tf-rule-btn.delete-btn {
+    color: #d93025;
+}
+
+.tf-rule-btn.delete-btn:hover {
+    background: #fce8e6;
+    color: #d93025;
+}
+
+/* 规则内容 */
+.tf-rule-content {
+    padding: var(--tf-spacing-md);
+}
+
+.tf-rule-conditions {
+    margin-bottom: var(--tf-spacing-md);
+}
+
+.tf-rule-conditions h4 {
+    font-size: var(--tf-font-size-sm);
+    font-weight: 500;
+    color: var(--tf-text-primary);
+    margin: 0 0 var(--tf-spacing-sm) 0;
+}
+
+.tf-condition-preview {
+    background: var(--tf-bg-secondary);
+    border: 1px solid var(--tf-border-light);
+    border-radius: var(--tf-radius);
+    padding: var(--tf-spacing-sm);
+    font-size: var(--tf-font-size-xs);
+    color: var(--tf-text-secondary);
+    font-family: monospace;
+    white-space: pre-wrap;
+    word-break: break-word;
+}
+
+/* 空状态 */
+.tf-rules-empty {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 64px var(--tf-spacing-md);
+    text-align: center;
+    color: var(--tf-text-muted);
+}
+
+.tf-rules-empty svg {
+    margin-bottom: var(--tf-spacing-md);
+    color: var(--tf-text-muted);
+}
+
+.tf-rules-empty h3 {
+    font-size: var(--tf-font-size-md);
+    font-weight: 500;
+    margin: 0 0 var(--tf-spacing-sm) 0;
+    color: var(--tf-text-primary);
+}
+
+.tf-rules-empty p {
+    font-size: var(--tf-font-size-sm);
+    margin: 0 0 var(--tf-spacing-md) 0;
+    line-height: 1.5;
+}
+
+/* 表单样式 */
+.tf-form-field {
+    margin-bottom: var(--tf-spacing-md);
+}
+
+.tf-form-field label {
+    display: block;
+    font-size: var(--tf-font-size-sm);
+    font-weight: 500;
+    color: var(--tf-text-primary);
+    margin-bottom: var(--tf-spacing-xs);
+}
+
+.tf-input,
+.tf-select {
+    width: 100%;
+    padding: 8px 12px;
+    border: 1px solid var(--tf-border);
+    border-radius: var(--tf-radius);
+    background: var(--tf-bg-primary);
+    font-size: var(--tf-font-size-sm);
+    color: var(--tf-text-primary);
+    outline: none;
+    transition: var(--tf-transition);
+    min-height: 36px;
+}
+
+.tf-input:hover,
+.tf-select:hover {
+    border-color: #5f6368;
+}
+
+.tf-input:focus,
+.tf-select:focus {
+    border-color: var(--tf-primary);
+    box-shadow: 0 0 0 2px var(--tf-focus-ring);
+}
+
+.tf-input.error,
+.tf-select.error {
+    border-color: #d93025;
+}
+
+.tf-field-description {
+    font-size: var(--tf-font-size-xs);
+    color: var(--tf-text-secondary);
+    margin: var(--tf-spacing-xs) 0 0 0;
+    line-height: 1.4;
+}
+
+/* 条件编辑器 */
+.tf-conditions-container {
+    margin-bottom: var(--tf-spacing-sm);
+}
+
+.tf-condition-item {
+    background: var(--tf-bg-secondary);
+    border: 1px solid var(--tf-border-light);
+    border-radius: var(--tf-radius);
+    padding: var(--tf-spacing-sm);
+    margin-bottom: var(--tf-spacing-sm);
+}
+
+.tf-condition-row {
+    display: flex;
+    gap: var(--tf-spacing-sm);
+    align-items: center;
+}
+
+.tf-condition-field,
+.tf-condition-operator {
+    flex: 0 0 120px;
+}
+
+.tf-condition-value {
+    flex: 1;
+    min-width: 0;
+}
+
+.tf-condition-remove-btn {
+    flex: 0 0 32px;
+    padding: 4px;
+}
+
+.tf-btn-small {
+    font-size: var(--tf-font-size-xs);
+    padding: 4px 8px;
+    min-height: 28px;
+}
+
+/* 目标分组 */
+#custom-group-input-container {
+    margin-top: var(--tf-spacing-sm);
+}
+
+/* 切换控件行 */
+.tf-toggle-row {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: var(--tf-spacing-md);
+}
+
+.tf-toggle-info {
+    flex: 1;
+}
+
+.tf-toggle-info label {
+    margin-bottom: 2px;
+}
+
+/* 模态框按钮布局 */
+.tf-footer-actions {
+    display: flex;
+    gap: var(--tf-spacing-sm);
+}
+
+/* 测试结果 */
+.tf-test-results-summary {
+    background: var(--tf-bg-secondary);
+    border: 1px solid var(--tf-border-light);
+    border-radius: var(--tf-radius);
+    padding: var(--tf-spacing-md);
+    margin-bottom: var(--tf-spacing-md);
+}
+
+.tf-test-result-stats {
+    display: flex;
+    gap: var(--tf-spacing-xl);
+    flex-wrap: wrap;
+}
+
+.tf-test-stat-item {
+    display: flex;
+    flex-direction: column;
+    gap: var(--tf-spacing-xs);
+}
+
+.tf-test-stat-label {
+    font-size: var(--tf-font-size-xs);
+    color: var(--tf-text-secondary);
+    font-weight: 500;
+}
+
+.tf-test-stat-value {
+    font-size: var(--tf-font-size-lg);
+    font-weight: 600;
+    color: var(--tf-text-primary);
+}
+
+.tf-test-stat-value.success {
+    color: #188038;
+}
+
+.tf-test-stat-value.warning {
+    color: #f9a825;
+}
+
+.tf-test-stat-value.error {
+    color: #d93025;
+}
+
+.tf-test-results-list {
+    max-height: 300px;
+    overflow-y: auto;
+    border: 1px solid var(--tf-border-light);
+    border-radius: var(--tf-radius);
+}
+
+.tf-test-result-item {
+    display: flex;
+    align-items: flex-start;
+    gap: var(--tf-spacing-sm);
+    padding: var(--tf-spacing-sm);
+    border-bottom: 1px solid var(--tf-border-light);
+}
+
+.tf-test-result-item:last-child {
+    border-bottom: none;
+}
+
+.tf-test-result-match {
+    display: flex;
+    align-items: center;
+    gap: var(--tf-spacing-xs);
+    min-width: 80px;
+}
+
+.tf-test-result-match.match {
+    color: #188038;
+}
+
+.tf-test-result-match.no-match {
+    color: #d93025;
+}
+
+.tf-test-result-info {
+    flex: 1;
+    min-width: 0;
+}
+
+.tf-test-result-title {
+    font-size: var(--tf-font-size-sm);
+    font-weight: 500;
+    color: var(--tf-text-primary);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    margin-bottom: 2px;
+}
+
+.tf-test-result-url {
+    font-size: var(--tf-font-size-xs);
+    color: var(--tf-text-muted);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+/* 拖拽排序指示器 */
+.tf-sortable-helper {
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    z-index: 10000;
+}
+
+.tf-sortable-placeholder {
+    border: 2px dashed var(--tf-primary);
+    background: rgba(0, 122, 255, 0.05);
+    margin-bottom: var(--tf-spacing-md);
+    border-radius: var(--tf-radius-lg);
+}
+
+/* 响应式设计 */
+@media (max-width: 480px) {
+    .tf-rules-header {
+        flex-direction: column;
+        gap: var(--tf-spacing-md);
+        align-items: stretch;
+    }
+
+    .tf-rule-header {
+        flex-direction: column;
+        gap: var(--tf-spacing-md);
+        align-items: stretch;
+    }
+
+    .tf-rule-actions {
+        justify-content: flex-end;
+    }
+
+    .tf-rule-details {
+        flex-direction: column;
+        gap: var(--tf-spacing-xs);
+    }
+
+    .tf-condition-row {
+        flex-direction: column;
+        gap: var(--tf-spacing-xs);
+    }
+
+    .tf-condition-field,
+    .tf-condition-operator,
+    .tf-condition-value {
+        flex: none;
+        width: 100%;
+    }
+
+    .tf-footer-actions {
+        flex-direction: column;
+    }
+
+    .tf-toggle-row {
+        flex-direction: column;
+        gap: var(--tf-spacing-sm);
+    }
+
+    .tf-test-result-stats {
+        flex-direction: column;
+        gap: var(--tf-spacing-md);
+    }
+
+    .tf-test-result-item {
+        flex-direction: column;
+        gap: var(--tf-spacing-xs);
+    }
+
+    .tf-test-result-match {
+        min-width: auto;
+    }
+}
+
+/* 可访问性 */
+@media (prefers-reduced-motion: reduce) {
+    .tf-rule-item {
+        transition: none;
+    }
+}
+
+/* 高对比度模式 */
+@media (prefers-contrast: high) {
+    .tf-rule-item {
+        border-width: 2px;
+    }
+
+    .tf-condition-item {
+        border-width: 2px;
+    }
+}

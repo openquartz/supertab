@@ -1,0 +1,228 @@
+/* ui/settings/settings.css - Chrome UI风格 */
+:root {
+    --tf-danger: #d93025;
+    --tf-border-light: #e8eaed;
+}
+
+.tf-settings-section {
+    margin-bottom: var(--tf-spacing-xl);
+    padding-bottom: var(--tf-spacing-lg);
+    border-bottom: 1px solid var(--tf-border-light);
+}
+
+.tf-settings-section:last-child {
+    border-bottom: none;
+    margin-bottom: 0;
+}
+
+.tf-settings-section h2 {
+    font-size: var(--tf-font-size-lg);
+    font-weight: 500;
+    margin-bottom: var(--tf-spacing-md);
+    color: var(--tf-text-primary);
+    letter-spacing: -0.1px;
+}
+
+.tf-setting-item {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    padding: var(--tf-spacing-md) 0;
+    border-bottom: 1px solid var(--tf-border-light);
+    min-height: 56px;
+}
+
+.tf-setting-item:last-child {
+    border-bottom: none;
+}
+
+.tf-setting-item-danger {
+    background: #fce8e6;
+    margin: 0 calc(-1 * var(--tf-spacing-md));
+    padding: var(--tf-spacing-md);
+    border-radius: var(--tf-radius);
+    border-bottom: none;
+}
+
+.tf-setting-info {
+    flex: 1;
+    margin-right: var(--tf-spacing-lg);
+    padding-top: 2px;
+}
+
+.tf-setting-label {
+    display: block;
+    font-weight: 500;
+    margin-bottom: 2px;
+    color: var(--tf-text-primary);
+    font-size: 13px;
+}
+
+.tf-setting-description {
+    font-size: 12px;
+    color: var(--tf-text-secondary);
+    margin: 0;
+    line-height: 1.4;
+}
+
+.tf-setting-control {
+    display: flex;
+    align-items: center;
+    gap: var(--tf-spacing-sm);
+}
+
+/* 开关样式 - Chrome风格 */
+.tf-toggle {
+    position: relative;
+    display: inline-block;
+    width: 36px;
+    height: 20px;
+    flex-shrink: 0;
+}
+
+.tf-toggle input {
+    opacity: 0;
+    width: 0;
+    height: 0;
+}
+
+.tf-toggle-slider {
+    position: absolute;
+    cursor: pointer;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: #5f6368;
+    transition: .2s;
+    border-radius: 10px;
+}
+
+.tf-toggle-slider:before {
+    position: absolute;
+    content: "";
+    height: 16px;
+    width: 16px;
+    left: 2px;
+    bottom: 2px;
+    background-color: white;
+    transition: .2s;
+    border-radius: 50%;
+}
+
+.tf-toggle input:checked + .tf-toggle-slider {
+    background-color: var(--tf-primary);
+}
+
+.tf-toggle input:checked + .tf-toggle-slider:before {
+    transform: translateX(16px);
+}
+
+/* 输入框样式 */
+.tf-setting-control input[type="text"],
+.tf-setting-control input[type="number"],
+.tf-setting-control select,
+.tf-setting-control textarea {
+    padding: 6px 8px;
+    border: 1px solid var(--tf-border);
+    border-radius: var(--tf-radius);
+    background: var(--tf-bg-primary);
+    font-size: 13px;
+    color: var(--tf-text-primary);
+    outline: none;
+    transition: border-color 0.15s ease;
+    min-height: 32px;
+}
+
+.tf-setting-control input[type="text"]:hover,
+.tf-setting-control input[type="number"]:hover,
+.tf-setting-control select:hover {
+    border-color: #5f6368;
+}
+
+.tf-setting-control input[type="text"]:focus,
+.tf-setting-control input[type="number"]:focus,
+.tf-setting-control select:focus,
+.tf-setting-control textarea:focus {
+    border-color: var(--tf-primary);
+    box-shadow: 0 0 0 2px var(--tf-focus-ring);
+}
+
+.tf-setting-control textarea {
+    resize: vertical;
+    min-height: 72px;
+    font-family: monospace;
+    font-size: 12px;
+}
+
+.tf-setting-unit {
+    font-size: 12px;
+    color: var(--tf-text-muted);
+}
+
+/* 按钮样式 */
+.tf-btn-danger {
+    background: transparent;
+    color: var(--tf-danger);
+}
+
+.tf-btn-danger:hover {
+    background: #fce8e6;
+}
+
+/* 关于信息 */
+.tf-about-info {
+    background: var(--tf-bg-secondary);
+    padding: var(--tf-spacing-md);
+    border-radius: var(--tf-radius);
+}
+
+.tf-about-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: var(--tf-spacing-sm) 0;
+    border-bottom: 1px solid var(--tf-border-light);
+}
+
+.tf-about-item:last-child {
+    border-bottom: none;
+}
+
+.tf-about-label {
+    font-weight: 500;
+    color: var(--tf-text-secondary);
+    font-size: 12px;
+}
+
+.tf-about-value {
+    color: var(--tf-text-primary);
+    font-size: 13px;
+}
+
+.tf-about-link {
+    color: var(--tf-primary);
+    text-decoration: none;
+    font-size: 13px;
+}
+
+.tf-about-link:hover {
+    text-decoration: underline;
+}
+
+/* 响应式调整 */
+@media (max-width: 480px) {
+    .tf-setting-item {
+        flex-direction: column;
+        align-items: stretch;
+    }
+
+    .tf-setting-info {
+        margin-right: 0;
+        margin-bottom: var(--tf-spacing-sm);
+    }
+
+    .tf-setting-control {
+        justify-content: flex-start;
+    }
+}
