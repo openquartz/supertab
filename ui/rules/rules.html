@@ -1,0 +1,182 @@
+<!-- ui/rules/rules.html -->
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SuperTab - 规则管理</title>
+    <link rel="stylesheet" href="../sidebar/sidebar.css">
+    <link rel="stylesheet" href="rules.css">
+</head>
+<body>
+    <div id="rules-app">
+        <header class="tf-header">
+            <div class="tf-brand">
+                <span class="tf-icon">📋</span>
+                <h1>规则管理</h1>
+            </div>
+            <button id="close-btn" class="tf-btn tf-btn-icon" title="关闭">
+                <span>✕</span>
+            </button>
+        </header>
+
+        <div class="tf-content">
+            <!-- 规则列表头部 -->
+            <div class="tf-rules-header">
+                <div class="tf-rules-header-info">
+                    <h2>自动化规则</h2>
+                    <p>设置规则自动将标签页分组，支持基于URL、标题等条件</p>
+                </div>
+                <button id="add-rule-btn" class="tf-btn tf-btn-primary">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <line x1="12" y1="5" x2="12" y2="19"/>
+                        <line x1="5" y1="12" x2="19" y2="12"/>
+                    </svg>
+                    <span>添加规则</span>
+                </button>
+            </div>
+
+            <!-- 规则列表 -->
+            <div id="rules-container" class="tf-rules-container">
+                <!-- 规则列表将通过JavaScript动态生成 -->
+            </div>
+        </div>
+
+        <!-- 规则编辑器模态框 -->
+        <div id="rule-editor-modal" class="tf-modal tf-hidden" role="dialog" aria-modal="true" aria-labelledby="rule-editor-modal-title">
+            <div class="tf-modal-backdrop" data-action="close-rule-editor"></div>
+            <div class="tf-modal-panel">
+                <div class="tf-modal-header">
+                    <h2 id="rule-editor-modal-title">编辑规则</h2>
+                    <button id="rule-editor-close-btn" class="tf-btn tf-btn-icon" type="button" aria-label="关闭弹窗">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <line x1="18" y1="6" x2="6" y2="18"/>
+                            <line x1="6" y1="6" x2="18" y2="18"/>
+                        </svg>
+                    </button>
+                </div>
+                <div class="tf-modal-body">
+                    <!-- 规则名称 -->
+                    <div class="tf-form-field">
+                        <label for="rule-name-input">规则名称</label>
+                        <input id="rule-name-input" class="tf-input" type="text" placeholder="例如：工作相关">
+                    </div>
+
+                    <!-- 匹配条件 -->
+                    <div class="tf-form-field">
+                        <label>匹配条件</label>
+                        <div id="conditions-container" class="tf-conditions-container">
+                            <!-- 条件列表将通过JavaScript动态生成 -->
+                        </div>
+                        <button id="add-condition-btn" class="tf-btn tf-btn-secondary tf-btn-small">
+                            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <line x1="12" y1="5" x2="12" y2="19"/>
+                                <line x1="5" y1="12" x2="19" y2="12"/>
+                            </svg>
+                            <span>添加条件</span>
+                        </button>
+                    </div>
+
+                    <!-- 目标分组 -->
+                    <div class="tf-form-field">
+                        <label for="target-group-select">目标分组</label>
+                        <select id="target-group-select" class="tf-select">
+                            <option value="">选择分组...</option>
+                            <option value="custom">自定义分组</option>
+                            <option value="domain">域名分组</option>
+                            <option value="date">时间分组</option>
+                            <option value="session">会话分组</option>
+                        </select>
+                        <div id="custom-group-input-container" class="tf-hidden">
+                            <input id="custom-group-input" class="tf-input" type="text" placeholder="输入自定义分组名称">
+                        </div>
+                    </div>
+
+                    <!-- 优先级 -->
+                    <div class="tf-form-field">
+                        <label for="rule-priority-input">优先级</label>
+                        <input id="rule-priority-input" class="tf-input" type="number" min="1" max="100" value="10" placeholder="1-100">
+                        <p class="tf-field-description">数字越小优先级越高</p>
+                    </div>
+
+                    <!-- 启用状态 -->
+                    <div class="tf-form-field">
+                        <div class="tf-toggle-row">
+                            <div class="tf-toggle-info">
+                                <label for="rule-enabled-toggle">启用规则</label>
+                                <p class="tf-field-description">启用后规则将自动执行</p>
+                            </div>
+                            <label class="tf-toggle">
+                                <input type="checkbox" id="rule-enabled-toggle" checked>
+                                <span class="tf-toggle-slider"></span>
+                            </label>
+                        </div>
+                    </div>
+                </div>
+                <div class="tf-modal-footer">
+                    <button id="test-rule-btn" class="tf-btn tf-btn-secondary">测试规则</button>
+                    <div class="tf-footer-actions">
+                        <button id="rule-editor-cancel-btn" class="tf-btn tf-btn-secondary">取消</button>
+                        <button id="rule-editor-save-btn" class="tf-btn tf-btn-primary">保存规则</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 条件编辑器模板 -->
+        <template id="condition-template">
+            <div class="tf-condition-item">
+                <div class="tf-condition-row">
+                    <select class="tf-select tf-condition-field">
+                        <option value="url">URL</option>
+                        <option value="title">标题</option>
+                        <option value="domain">域名</option>
+                        <option value="path">路径</option>
+                    </select>
+                    <select class="tf-select tf-condition-operator">
+                        <option value="contains">包含</option>
+                        <option value="equals">等于</option>
+                        <option value="startsWith">开头是</option>
+                        <option value="endsWith">结尾是</option>
+                        <option value="regex">正则表达式</option>
+                    </select>
+                    <input class="tf-input tf-condition-value" type="text" placeholder="输入匹配值">
+                    <button class="tf-btn tf-btn-icon tf-btn-danger tf-condition-remove-btn">
+                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <line x1="18" y1="6" x2="6" y2="18"/>
+                            <line x1="6" y1="6" x2="18" y2="18"/>
+                        </svg>
+                    </button>
+                </div>
+            </div>
+        </template>
+
+        <!-- 测试结果模态框 -->
+        <div id="test-results-modal" class="tf-modal tf-hidden" role="dialog" aria-modal="true" aria-labelledby="test-results-modal-title">
+            <div class="tf-modal-backdrop" data-action="close-test-results"></div>
+            <div class="tf-modal-panel">
+                <div class="tf-modal-header">
+                    <h2 id="test-results-modal-title">测试结果</h2>
+                    <button id="test-results-close-btn" class="tf-btn tf-btn-icon" type="button" aria-label="关闭弹窗">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <line x1="18" y1="6" x2="6" y2="18"/>
+                            <line x1="6" y1="6" x2="18" y2="18"/>
+                        </svg>
+                    </button>
+                </div>
+                <div class="tf-modal-body">
+                    <div id="test-results-summary" class="tf-test-results-summary"></div>
+                    <div id="test-results-list" class="tf-test-results-list">
+                        <!-- 测试结果将通过JavaScript动态生成 -->
+                    </div>
+                </div>
+                <div class="tf-modal-footer">
+                    <button id="test-results-close-footer-btn" class="tf-btn tf-btn-primary">关闭</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="rules-manager.js"></script>
+</body>
+</html>

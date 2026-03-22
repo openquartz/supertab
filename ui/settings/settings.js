@@ -43,7 +43,8 @@ class SuperTabSettings {
       saveSettings: document.getElementById('save-settings'),
       resetSettings: document.getElementById('reset-settings'),
       version: document.getElementById('version'),
-      feedbackLink: document.getElementById('feedback-link')
+      feedbackLink: document.getElementById('feedback-link'),
+      manageRules: document.getElementById('manage-rules')
     };
   }
 
@@ -86,6 +87,11 @@ class SuperTabSettings {
     this.elements.feedbackLink.addEventListener('click', (e) => {
       e.preventDefault();
       this.openFeedback();
+    });
+
+    // 管理规则
+    this.elements.manageRules.addEventListener('click', () => {
+      this.navigateToRules();
     });
   }
 
@@ -267,6 +273,58 @@ class SuperTabSettings {
     const subject = encodeURIComponent('SuperTab 插件反馈');
     const body = encodeURIComponent('请描述您遇到的问题或建议：\n\n');
     window.open(`mailto:feedback@tabflow.com?subject=${subject}&body=${body}`);
+  }
+
+  // 导航到规则管理页面
+  navigateToRules() {
+    // 创建规则管理页面的容器
+    const container = document.createElement('div');
+    container.id = 'rules-page-container';
+    container.innerHTML = '<div class="loading">加载中...</div>';
+
+    // 清空当前页面内容
+    document.body.innerHTML = '';
+    document.body.appendChild(container);
+
+    // 动态加载规则管理页面
+    this.loadRulesPage();
+  }
+
+  // 加载规则管理页面
+  async loadRulesPage() {
+    try {
+      // 加载HTML内容
+      const response = await fetch(chrome.runtime.getURL('ui/rules/rules.html'));
+      const html = await response.text();
+
+      const container = document.getElementById('rules-page-container');
+      container.innerHTML = html;
+
+      // 加载CSS
+      const link = document.createElement('link');
+      link.rel = 'stylesheet';
+      link.href = chrome.runtime.getURL('ui/rules/rules.css');
+      document.head.appendChild(link);
+
+      // 加载JavaScript
+      const script = document.createElement('script');
+      script.src = chrome.runtime.getURL('ui/rules/rules-manager.js');
+      script.onload = () => {
+        console.log('✅ Rules page loaded');
+      };
+      document.body.appendChild(script);
+
+    } catch (error) {
+      console.error('Error loading rules page:', error);
+      const container = document.getElementById('rules-page-container');
+      container.innerHTML = '<div class="error">加载规则管理页面失败</div>';
+    }
+  }
+
+  // 返回设置页面的功能（可选）
+  navigateBackToSettings() {
+    // 重新加载设置页面
+    location.reload();
   }
 
   showToast(message, type = 'info') {

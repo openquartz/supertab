@@ -35,5 +35,15 @@
     "48": "images/icon48.png",
     "128": "images/icon128.png"
   },
-  "options_page": "ui/settings/settings.html"
+  "options_page": "ui/settings/settings.html",
+  "web_accessible_resources": [
+    {
+      "resources": [
+        "ui/rules/rules.html",
+        "ui/rules/rules.css",
+        "ui/rules/rules-manager.js"
+      ],
+      "matches": ["<all_urls>"]
+    }
+  ]
 }
