@@ -4,34 +4,231 @@ class GroupingEngine {
   constructor() {
     this.domainGroups = new Map();
     this.dateGroups = new Map();
+    
+    // Common domain patterns for smart grouping
+    this.domainPatterns = {
+      'google.com': ['google.com', 'google.co.uk', 'google.co.jp', 'google.fr', 'google.de'],
+      'github.com': ['github.com', 'gist.github.com', 'pages.github.com'],
+      'amazon.com': ['amazon.com', 'amazon.co.uk', 'amazon.co.jp', 'amazon.fr', 'amazon.de'],
+      'microsoft.com': ['microsoft.com', 'office.com', 'onedrive.com', 'outlook.com', 'azure.com'],
+      'apple.com': ['apple.com', 'icloud.com', 'itunes.com', 'appstore.com'],
+      'alibaba.com': ['alibaba.com', 'taobao.com', 'tmall.com', 'aliexpress.com'],
+      'tencent.com': ['qq.com', 'weixin.qq.com', 'tencent.com', 'wechat.com'],
+      'baidu.com': ['baidu.com', 'tieba.baidu.com', 'zhidao.baidu.com', 'map.baidu.com'],
+      'bilibili.com': ['bilibili.com', 'bilibili.tv', 'bilibili.net'],
+      'jd.com': ['jd.com', 'jd.hk', 'jd.co.jp'],
+      'netflix.com': ['netflix.com', 'netflix.net'],
+      'youtube.com': ['youtube.com', 'youtu.be'],
+      'twitter.com': ['twitter.com', 'x.com'],
+      'reddit.com': ['reddit.com', 'redd.it'],
+      'stackoverflow.com': ['stackoverflow.com', 'stackexchange.com'],
+      'wikipedia.org': ['wikipedia.org', 'wikimedia.org', 'wikidata.org']
+    };
+    
+    // Domain category mapping for smarter grouping
+    this.domainCategories = {
+      'work': ['linkedin.com', 'indeed.com', 'glassdoor.com', 'upwork.com', 'fiverr.com'],
+      'social': ['facebook.com', 'instagram.com', 'twitter.com', 'x.com', 'reddit.com', 'pinterest.com', 'tiktok.com', 'snapchat.com', 'weibo.com', 'zhihu.com', 'douban.com'],
+      'shopping': ['amazon.com', 'ebay.com', 'walmart.com', 'target.com', 'alibaba.com', 'taobao.com', 'tmall.com', 'jd.com', 'pinduoduo.com', 'suning.com'],
+      'learning': ['coursera.org', 'udemy.com', 'edx.org', 'khanacademy.org', 'pluralsight.com', 'lynda.com', 'codecademy.com', 'freecodecamp.org'],
+      'news': ['bbc.com', 'cnn.com', 'nytimes.com', 'theguardian.com', 'washingtonpost.com', 'reuters.com', 'bloomberg.com', 'wsj.com', 'ft.com', 'qq.com/news', 'sina.com.cn', 'sohu.com', '163.com/news'],
+      'finance': ['bankofamerica.com', 'chase.com', 'wellsfargo.com', 'citibank.com', 'hsbc.com', 'icbc.com.cn', 'ccb.com', 'boc.cn', 'abcchina.com', 'psbc.com', 'citics.com'],
+      'entertainment': ['netflix.com', 'hbo.com', 'disneyplus.com', 'hulu.com', 'primevideo.com', 'bilibili.com', 'youku.com', 'iqiyi.com', 'tencentvideo.com', 'spotify.com', 'music.163.com', 'qqmusic.com', 'kuwo.cn', 'kugou.com'],
+      'search': ['google.com', 'bing.com', 'yahoo.com', 'baidu.com', 'sogou.com', 'so.com', 'duckduckgo.com'],
+      'tools': ['slack.com', 'notion.so', 'trello.com', 'asana.com', 'jira.com', 'dropbox.com', 'box.com', 'evernote.com', 'onedrive.com', 'icloud.com', 'docs.google.com', 'sheets.google.com', 'slides.google.com', 'office.com'],
+      'coding': ['github.com', 'gitlab.com', 'bitbucket.org', 'stackoverflow.com', 'codepen.io', 'jsfiddle.net', 'repl.it', 'codewars.com', 'leetcode.com', 'hackerrank.com', 'hackerearth.com', 'topcoder.com', 'codesignal.com']
+    };
   }
 
-  // Group tabs by domain
-  groupByDomain(tabs) {
+  // Extract base domain (e.g., 'github.com' from 'gist.github.com')
+  extractBaseDomain(hostname) {
+    if (!hostname) return null;
+    
+    const parts = hostname.split('.');
+    if (parts.length <= 2) return hostname;
+    
+    // Check for common country code TLDs
+    const countryTLDs = ['cn', 'jp', 'uk', 'fr', 'de', 'es', 'it', 'br', 'au', 'ca', 'in', 'ru', 'kr', 'tw', 'hk', 'sg', 'my', 'th', 'vn', 'id', 'ph', 'mx', 'ar', 'co', 'pe', 'cl', 'ec', 'uy', 'za', 'ng', 'eg', 'sa', 'ae', 'il', 'tr', 'pl', 'nl', 'se', 'no', 'fi', 'dk', 'pt', 'gr', 'ro', 'bg', 'hu', 'cz', 'sk', 'at', 'ch', 'be', 'lu', 'ie'];
+    
+    // Check for second-level domains like .co.uk, .co.jp, .com.cn
+    if (parts.length >= 3) {
+      const lastTwo = parts.slice(-2).join('.');
+      const lastThree = parts.slice(-3).join('.');
+      
+      // Handle .co.uk, .co.jp etc.
+      if (parts[parts.length - 2] === 'co' && countryTLDs.includes(parts[parts.length - 1])) {
+        return lastThree;
+      }
+      
+      // Handle .com.cn, .net.cn etc.
+      if (['com', 'net', 'org', 'gov', 'edu', 'ac'].includes(parts[parts.length - 2]) && countryTLDs.includes(parts[parts.length - 1])) {
+        return lastThree;
+      }
+    }
+    
+    // Default: return last two parts
+    return parts.slice(-2).join('.');
+  }
+
+  // Get domain category for smarter grouping
+  getDomainCategory(domain) {
+    if (!domain) return null;
+    
+    const baseDomain = this.extractBaseDomain(domain);
+    if (!baseDomain) return null;
+    
+    for (const [category, domains] of Object.entries(this.domainCategories)) {
+      for (const pattern of domains) {
+        if (baseDomain === pattern || baseDomain.endsWith(`.${pattern}`) || pattern.endsWith(`.${baseDomain}`)) {
+          return category;
+        }
+      }
+    }
+    
+    return null;
+  }
+
+  // Check if domains are related (same company/service)
+  areDomainsRelated(domain1, domain2) {
+    if (!domain1 || !domain2) return false;
+    if (domain1 === domain2) return true;
+    
+    const base1 = this.extractBaseDomain(domain1);
+    const base2 = this.extractBaseDomain(domain2);
+    
+    if (base1 === base2) return true;
+    
+    // Check domain patterns
+    for (const [mainDomain, relatedDomains] of Object.entries(this.domainPatterns)) {
+      const hasDomain1 = relatedDomains.some(d => domain1.includes(d) || base1 === d);
+      const hasDomain2 = relatedDomains.some(d => domain2.includes(d) || base2 === d);
+      if (hasDomain1 && hasDomain2) return true;
+    }
+    
+    return false;
+  }
+
+  // Group tabs by domain (enhanced version)
+  groupByDomain(tabs, options = {}) {
+    const { 
+      smartGrouping = true, 
+      groupByCategory = false,
+      includeSubdomains = true 
+    } = options;
+    
     const groups = new Map();
+    const categoryGroups = new Map();
 
     for (const tab of tabs) {
       const domain = this.extractDomain(tab.url);
       if (!domain) continue;
+      
+      let groupKey = domain;
+      let groupName = domain;
+      
+      if (smartGrouping) {
+        const baseDomain = this.extractBaseDomain(domain);
+        if (baseDomain && includeSubdomains) {
+          groupKey = baseDomain;
+          
+          // Check if domain has a common pattern with special name
+          for (const [mainDomain, relatedDomains] of Object.entries(this.domainPatterns)) {
+            if (relatedDomains.some(d => domain.includes(d) || baseDomain === d)) {
+              groupKey = mainDomain;
+              groupName = mainDomain;
+              break;
+            }
+          }
+        }
+      }
+      
+      // If grouping by category
+      if (groupByCategory) {
+        const category = this.getDomainCategory(domain);
+        if (category) {
+          if (!categoryGroups.has(category)) {
+            categoryGroups.set(category, {
+              id: `category_${category}`,
+              name: this.getCategoryDisplayName(category),
+              type: 'category',
+              tabs: [],
+              collapsed: true,
+              createdAt: Date.now(),
+              icon: this.getCategoryIcon(category)
+            });
+          }
+          categoryGroups.get(category).tabs.push(tab);
+          continue;
+        }
+      }
 
-      if (!groups.has(domain)) {
-        groups.set(domain, {
-          id: `domain_${this.sanitizeId(domain)}`,
-          name: domain,
+      if (!groups.has(groupKey)) {
+        groups.set(groupKey, {
+          id: `domain_${this.sanitizeId(groupKey)}`,
+          name: groupName,
           type: 'domain',
           tabs: [],
           collapsed: true,
           createdAt: Date.now(),
-          icon: this.getDomainIcon(domain)
+          icon: this.getDomainIcon(groupKey)
         });
       }
 
-      groups.get(domain).tabs.push(tab);
+      groups.get(groupKey).tabs.push(tab);
+    }
+    
+    // Combine regular groups with category groups if using category grouping
+    let resultGroups = [];
+    if (groupByCategory) {
+      resultGroups = Array.from(categoryGroups.values());
+      // Add remaining domain groups that don't fit into any category
+      resultGroups = resultGroups.concat(Array.from(groups.values()));
+    } else {
+      resultGroups = Array.from(groups.values());
     }
 
-    // Convert to array and sort by tab count (descending)
-    return Array.from(groups.values())
-      .sort((a, b) => b.tabs.length - a.tabs.length);
+    // Sort by tab count (descending), then alphabetically
+    return resultGroups
+      .sort((a, b) => {
+        if (b.tabs.length !== a.tabs.length) {
+          return b.tabs.length - a.tabs.length;
+        }
+        return a.name.localeCompare(b.name);
+      });
+  }
+
+  // Get category display name
+  getCategoryDisplayName(category) {
+    const categoryNames = {
+      'work': '工作',
+      'social': '社交',
+      'shopping': '购物',
+      'learning': '学习',
+      'news': '新闻',
+      'finance': '金融',
+      'entertainment': '娱乐',
+      'search': '搜索',
+      'tools': '工具',
+      'coding': '编程'
+    };
+    return categoryNames[category] || category;
+  }
+
+  // Get category icon
+  getCategoryIcon(category) {
+    const categoryIcons = {
+      'work': '💼',
+      'social': '👥',
+      'shopping': '🛍️',
+      'learning': '📚',
+      'news': '📰',
+      'finance': '💰',
+      'entertainment': '🎬',
+      'search': '🔍',
+      'tools': '🔧',
+      'coding': '💻'
+    };
+    return categoryIcons[category] || '🌐';
   }
 
   // Group tabs by date/time
@@ -164,45 +361,144 @@ class GroupingEngine {
     }
   }
 
-  getTimeGroup(timestamp) {
+  // Get time of day label (morning, afternoon, evening, night)
+  getTimeOfDayLabel(hour) {
+    if (hour >= 5 && hour < 9) return '清晨';
+    if (hour >= 9 && hour < 12) return '上午';
+    if (hour >= 12 && hour < 14) return '中午';
+    if (hour >= 14 && hour < 18) return '下午';
+    if (hour >= 18 && hour < 22) return '晚上';
+    return '深夜';
+  }
+
+  // Check if a date is a weekend
+  isWeekend(date) {
+    const day = date.getDay();
+    return day === 0 || day === 6;
+  }
+
+  // Get week number of the year
+  getWeekNumber(date) {
+    const d = new Date(Date.UTC(date.getFullYear(), date.getMonth(), date.getDate()));
+    const dayNum = d.getUTCDay() || 7;
+    d.setUTCDate(d.getUTCDate() + 4 - dayNum);
+    const yearStart = new Date(Date.UTC(d.getUTCFullYear(), 0, 1));
+    return Math.ceil((((d - yearStart) / 86400000) + 1) / 7);
+  }
+
+  // Enhanced getTimeGroup with more granular options
+  getTimeGroup(timestamp, options = {}) {
+    const { 
+      includeTimeOfDay = true, 
+      separateWeekends = false,
+      useChineseLabels = true
+    } = options;
+    
     const date = new Date(timestamp);
     const now = new Date();
     const diffMs = now.getTime() - date.getTime();
     const diffHours = diffMs / (1000 * 60 * 60);
     const diffDays = diffMs / (1000 * 60 * 60 * 24);
 
-    // Today - group by hour
+    // Today - more granular grouping with time of day
     if (diffHours < 24 && this.isSameDay(date, now)) {
       const hour = date.getHours();
-      const timeSlot = Math.floor(hour / 4) * 4; // 4-hour slots
-      return {
-        key: `today_${timeSlot}`,
-        label: `Today ${timeSlot}:00-${timeSlot + 4}:00`,
-        timeSlot: `today_${timeSlot}`
-      };
+      
+      if (includeTimeOfDay) {
+        const timeOfDay = this.getTimeOfDayLabel(hour);
+        const timeSlot = hour;
+        return {
+          key: `today_${timeOfDay}`,
+          label: useChineseLabels ? `今天 ${timeOfDay}` : `Today ${timeOfDay}`,
+          timeSlot: `today_${timeOfDay}`,
+          isToday: true,
+          timeOfDay
+        };
+      } else {
+        // Original 4-hour slots
+        const timeSlot = Math.floor(hour / 4) * 4;
+        return {
+          key: `today_${timeSlot}`,
+          label: useChineseLabels ? `今天 ${timeSlot}:00-${timeSlot + 4}:00` : `Today ${timeSlot}:00-${timeSlot + 4}:00`,
+          timeSlot: `today_${timeSlot}`,
+          isToday: true
+        };
+      }
     }
 
     // Yesterday
     const yesterday = new Date(now);
     yesterday.setDate(yesterday.getDate() - 1);
     if (diffDays < 2 && this.isSameDay(date, yesterday)) {
+      const hour = date.getHours();
+      const timeOfDay = includeTimeOfDay ? this.getTimeOfDayLabel(hour) : '';
+      
+      if (separateWeekends && this.isWeekend(yesterday)) {
+        return {
+          key: 'yesterday_weekend',
+          label: useChineseLabels ? '昨天（周末）' : 'Yesterday (Weekend)',
+          timeSlot: 'yesterday_weekend',
+          isYesterday: true,
+          isWeekend: true
+        };
+      }
+      
       return {
         key: 'yesterday',
-        label: 'Yesterday',
-        timeSlot: 'yesterday'
+        label: useChineseLabels ? (timeOfDay ? `昨天 ${timeOfDay}` : '昨天') : (timeOfDay ? `Yesterday ${timeOfDay}` : 'Yesterday'),
+        timeSlot: 'yesterday',
+        isYesterday: true
       };
     }
 
-    // This week
+    // This week - with weekday/weekend separation
     const weekAgo = new Date(now);
     weekAgo.setDate(weekAgo.getDate() - 7);
     if (diffDays < 7 && date >= weekAgo) {
-      const dayNames = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
-      const dayName = dayNames[date.getDay()];
+      const dayNamesEn = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+      const dayNamesCn = ['周日', '周一', '周二', '周三', '周四', '周五', '周六'];
+      const dayNameEn = dayNamesEn[date.getDay()];
+      const dayNameCn = dayNamesCn[date.getDay()];
+      const isWeekend = this.isWeekend(date);
+      
+      if (separateWeekends) {
+        if (isWeekend) {
+          return {
+            key: 'this_week_weekend',
+            label: useChineseLabels ? '本周周末' : 'This Weekend',
+            timeSlot: 'this_week_weekend',
+            isWeekend: true,
+            isThisWeek: true
+          };
+        } else {
+          return {
+            key: `this_week_${dayNameEn.toLowerCase()}`,
+            label: useChineseLabels ? `本周${dayNameCn}` : `This ${dayNameEn}`,
+            timeSlot: `this_week_${dayNameEn.toLowerCase()}`,
+            isThisWeek: true,
+            isWeekend: false
+          };
+        }
+      }
+      
       return {
-        key: `this_week_${dayName.toLowerCase()}`,
-        label: dayName,
-        timeSlot: `this_week_${dayName.toLowerCase()}`
+        key: `this_week_${dayNameEn.toLowerCase()}`,
+        label: useChineseLabels ? dayNameCn : dayNameEn,
+        timeSlot: `this_week_${dayNameEn.toLowerCase()}`,
+        isThisWeek: true
+      };
+    }
+
+    // Last week
+    const twoWeeksAgo = new Date(now);
+    twoWeeksAgo.setDate(twoWeeksAgo.getDate() - 14);
+    if (diffDays < 14 && date >= twoWeeksAgo) {
+      const weekNum = this.getWeekNumber(date);
+      return {
+        key: `last_week_${weekNum}`,
+        label: useChineseLabels ? '上周' : 'Last Week',
+        timeSlot: 'last_week',
+        isLastWeek: true
       };
     }
 
@@ -210,29 +506,140 @@ class GroupingEngine {
     if (diffDays < 30 && date.getMonth() === now.getMonth() && date.getFullYear() === now.getFullYear()) {
       return {
         key: 'this_month',
-        label: 'This Month',
-        timeSlot: 'this_month'
+        label: useChineseLabels ? '本月' : 'This Month',
+        timeSlot: 'this_month',
+        isThisMonth: true
       };
     }
 
-    // Older - group by month
+    // Last month
+    const lastMonth = new Date(now);
+    lastMonth.setMonth(lastMonth.getMonth() - 1);
+    if (date.getMonth() === lastMonth.getMonth() && date.getFullYear() === lastMonth.getFullYear()) {
+      return {
+        key: 'last_month',
+        label: useChineseLabels ? '上月' : 'Last Month',
+        timeSlot: 'last_month',
+        isLastMonth: true
+      };
+    }
+
+    // Older - group by month with year
     const month = date.getMonth() + 1;
     const year = date.getFullYear();
-    const monthNames = ['', 'January', 'February', 'March', 'April', 'May', 'June',
+    const monthNamesEn = ['', 'January', 'February', 'March', 'April', 'May', 'June',
                        'July', 'August', 'September', 'October', 'November', 'December'];
+    const monthNamesCn = ['', '一月', '二月', '三月', '四月', '五月', '六月',
+                       '七月', '八月', '九月', '十月', '十一月', '十二月'];
+
+    // Check if it's this year
+    if (year === now.getFullYear()) {
+      return {
+        key: `older_${year}_${month}`,
+        label: useChineseLabels ? `${monthNamesCn[month]}` : `${monthNamesEn[month]}`,
+        timeSlot: `older_${year}_${month}`,
+        year,
+        month
+      };
+    }
 
     return {
       key: `older_${year}_${month}`,
-      label: `${monthNames[month]} ${year}`,
-      timeSlot: `older_${year}_${month}`
+      label: useChineseLabels ? `${year}年${monthNamesCn[month]}` : `${monthNamesEn[month]} ${year}`,
+      timeSlot: `older_${year}_${month}`,
+      year,
+      month
     };
+  }
+
+  // Group tabs by date with enhanced options
+  groupByDate(tabs, options = {}) {
+    const { 
+      includeTimeOfDay = true, 
+      separateWeekends = false,
+      useChineseLabels = true
+    } = options;
+    
+    const groups = new Map();
+
+    for (const tab of tabs) {
+      const timeGroup = this.getTimeGroup(tab.openedAt || Date.now(), {
+        includeTimeOfDay,
+        separateWeekends,
+        useChineseLabels
+      });
+
+      if (!groups.has(timeGroup.key)) {
+        groups.set(timeGroup.key, {
+          id: `date_${timeGroup.key}`,
+          name: timeGroup.label,
+          type: 'date',
+          tabs: [],
+          collapsed: true,
+          createdAt: Date.now(),
+          timeSlot: timeGroup.timeSlot,
+          ...timeGroup
+        });
+      }
+
+      groups.get(timeGroup.key).tabs.push(tab);
+    }
+
+    // Convert to array and sort by time (most recent first)
+    return Array.from(groups.values())
+      .sort((a, b) => {
+        const timeA = this.getTimeValue(a.timeSlot);
+        const timeB = this.getTimeValue(b.timeSlot);
+        return timeB - timeA;
+      });
+  }
+
+  // Group tabs by work week (Monday-Friday vs weekend)
+  groupByWorkWeek(tabs) {
+    const groups = new Map();
+    
+    for (const tab of tabs) {
+      const date = new Date(tab.openedAt || Date.now());
+      const isWeekend = this.isWeekend(date);
+      const weekNum = this.getWeekNumber(date);
+      const year = date.getFullYear();
+      
+      const groupKey = isWeekend 
+        ? `weekend_${year}_${weekNum}` 
+        : `workweek_${year}_${weekNum}`;
+      
+      if (!groups.has(groupKey)) {
+        groups.set(groupKey, {
+          id: `week_${groupKey}`,
+          name: isWeekend ? `第${weekNum}周 周末` : `第${weekNum}周 工作日`,
+          type: 'workweek',
+          tabs: [],
+          collapsed: true,
+          createdAt: Date.now(),
+          isWeekend,
+          weekNum,
+          year
+        });
+      }
+      
+      groups.get(groupKey).tabs.push(tab);
+    }
+    
+    return Array.from(groups.values())
+      .sort((a, b) => {
+        if (b.year !== a.year) return b.year - a.year;
+        if (b.weekNum !== a.weekNum) return b.weekNum - a.weekNum;
+        return a.isWeekend ? 1 : -1; // Work days come before weekend
+      });
   }
 
   getTimeValue(timeSlot) {
     if (timeSlot.startsWith('today_')) return Date.now();
-    if (timeSlot === 'yesterday') return Date.now() - (24 * 60 * 60 * 1000);
+    if (timeSlot === 'yesterday' || timeSlot === 'yesterday_weekend') return Date.now() - (24 * 60 * 60 * 1000);
     if (timeSlot.startsWith('this_week_')) return Date.now() - (3 * 24 * 60 * 60 * 1000);
+    if (timeSlot === 'last_week') return Date.now() - (10 * 24 * 60 * 60 * 1000);
     if (timeSlot === 'this_month') return Date.now() - (15 * 24 * 60 * 60 * 1000);
+    if (timeSlot === 'last_month') return Date.now() - (45 * 24 * 60 * 60 * 1000);
     return Date.now() - (90 * 24 * 60 * 60 * 1000); // Default to 3 months ago
   }
 
