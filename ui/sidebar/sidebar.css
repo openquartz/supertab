@@ -1,42 +1,169 @@
 :root {
-    /* Chrome UI Color Palette - 更中性的灰色调 */
-    --tf-primary: #1a73e8;
-    --tf-primary-hover: #1557b0;
-    --tf-primary-light: #e8f0fe;
+    /* 主色调 - 更现代的蓝色调 */
+    --tf-primary: #4285f4;
+    --tf-primary-hover: #3367d6;
+    --tf-primary-light: rgba(66, 133, 244, 0.12);
+    --tf-primary-focus: rgba(66, 133, 244, 0.25);
+    
+    /* 辅助色 */
+    --tf-success: #34a853;
+    --tf-warning: #fbbc04;
+    --tf-danger: #ea4335;
+    
+    /* 浅色模式背景 */
     --tf-bg-primary: #ffffff;
-    --tf-bg-secondary: #f8f9fa;
-    --tf-bg-hover: #f1f3f4;
-    --tf-bg-active: #e8eaed;
-    --tf-text-primary: #202124;
-    --tf-text-secondary: #5f6368;
-    --tf-text-muted: #9aa0a6;
-    --tf-border: #dadce0;
-    --tf-border-light: #e8eaed;
-    --tf-focus-ring: rgba(26, 115, 232, 0.4);
-
-    /* 更锐利的圆角，与Chrome一致 */
+    --tf-bg-secondary: #f8fafc;
+    --tf-bg-tertiary: #f1f5f9;
+    --tf-bg-hover: #eef2f6;
+    --tf-bg-active: #e2e8f0;
+    --tf-bg-overlay: rgba(0, 0, 0, 0.05);
+    
+    /* 浅色模式文字 */
+    --tf-text-primary: #1e293b;
+    --tf-text-secondary: #475569;
+    --tf-text-muted: #94a3b8;
+    --tf-text-inverse: #ffffff;
+    
+    /* 浅色模式边框 */
+    --tf-border: #e2e8f0;
+    --tf-border-light: #f1f5f9;
+    --tf-border-dark: #cbd5e1;
+    
+    /* 焦点状态 */
+    --tf-focus-ring: rgba(66, 133, 244, 0.3);
+    --tf-focus-ring-width: 2px;
+    
+    /* 圆角 */
     --tf-radius: 4px;
-    --tf-radius-lg: 6px;
-
-    /* 更紧凑的字体系统 */
+    --tf-radius-md: 6px;
+    --tf-radius-lg: 8px;
+    --tf-radius-xl: 12px;
+    
+    /* 字体系统 */
     --tf-font-size-xs: 11px;
     --tf-font-size-sm: 12px;
     --tf-font-size-md: 13px;
     --tf-font-size-lg: 14px;
-
-    /* 更紧凑的间距，提高信息密度 */
+    --tf-font-size-xl: 16px;
+    
+    /* 间距系统 */
     --tf-spacing-xs: 2px;
     --tf-spacing-sm: 4px;
     --tf-spacing-md: 8px;
     --tf-spacing-lg: 12px;
     --tf-spacing-xl: 16px;
-
-    /* 轻微的投影，只在必要时使用 */
-    --tf-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
-    --tf-shadow-lg: 0 2px 4px rgba(0, 0, 0, 0.15);
-
-    /* 更快的过渡 */
+    --tf-spacing-2xl: 20px;
+    
+    /* 阴影系统 - 更细腻的层次 */
+    --tf-shadow-xs: 0 1px 2px rgba(0, 0, 0, 0.04);
+    --tf-shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.06), 0 1px 2px rgba(0, 0, 0, 0.03);
+    --tf-shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.08), 0 2px 4px -1px rgba(0, 0, 0, 0.04);
+    --tf-shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.08), 0 4px 6px -2px rgba(0, 0, 0, 0.04);
+    --tf-shadow-xl: 0 20px 25px -5px rgba(0, 0, 0, 0.08), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+    
+    /* 毛玻璃效果 */
+    --tf-blur-sm: blur(4px);
+    --tf-blur-md: blur(8px);
+    --tf-blur-lg: blur(12px);
+    --tf-bg-glass: rgba(255, 255, 255, 0.8);
+    --tf-bg-glass-hover: rgba(255, 255, 255, 0.9);
+    
+    /* 过渡动画 */
+    --tf-transition-fast: all 0.1s ease;
     --tf-transition: all 0.15s ease;
+    --tf-transition-slow: all 0.25s ease;
+    --tf-transition-bounce: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    
+    /* 动画曲线 */
+    --tf-ease-in-out: cubic-bezier(0.4, 0, 0.2, 1);
+    --tf-ease-out: cubic-bezier(0.0, 0, 0.2, 1);
+    --tf-ease-in: cubic-bezier(0.4, 0, 1, 1);
+}
+
+/* 深色模式变量 */
+@media (prefers-color-scheme: dark) {
+    :root {
+        /* 主色调 - 深色模式下更柔和 */
+        --tf-primary: #60a5fa;
+        --tf-primary-hover: #3b82f6;
+        --tf-primary-light: rgba(96, 165, 250, 0.15);
+        --tf-primary-focus: rgba(96, 165, 250, 0.3);
+        
+        /* 深色模式背景 */
+        --tf-bg-primary: #1e1e2e;
+        --tf-bg-secondary: #252536;
+        --tf-bg-tertiary: #2d2d3f;
+        --tf-bg-hover: #313244;
+        --tf-bg-active: #45475a;
+        --tf-bg-overlay: rgba(255, 255, 255, 0.03);
+        
+        /* 深色模式文字 */
+        --tf-text-primary: #cdd6f4;
+        --tf-text-secondary: #a6adc8;
+        --tf-text-muted: #6c7086;
+        --tf-text-inverse: #1e1e2e;
+        
+        /* 深色模式边框 */
+        --tf-border: #313244;
+        --tf-border-light: #45475a;
+        --tf-border-dark: #585b70;
+        
+        /* 焦点状态 */
+        --tf-focus-ring: rgba(96, 165, 250, 0.4);
+        
+        /* 深色模式阴影 - 更有氛围感 */
+        --tf-shadow-xs: 0 1px 2px rgba(0, 0, 0, 0.2);
+        --tf-shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.3), 0 1px 2px rgba(0, 0, 0, 0.15);
+        --tf-shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.4), 0 2px 4px -1px rgba(0, 0, 0, 0.2);
+        --tf-shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.4), 0 4px 6px -2px rgba(0, 0, 0, 0.2);
+        --tf-shadow-xl: 0 20px 25px -5px rgba(0, 0, 0, 0.5), 0 10px 10px -5px rgba(0, 0, 0, 0.25);
+        
+        /* 深色模式毛玻璃效果 */
+        --tf-bg-glass: rgba(30, 30, 46, 0.85);
+        --tf-bg-glass-hover: rgba(30, 30, 46, 0.95);
+    }
+}
+
+/* 手动深色模式类 */
+.tf-dark-mode {
+    /* 主色调 - 深色模式下更柔和 */
+    --tf-primary: #60a5fa;
+    --tf-primary-hover: #3b82f6;
+    --tf-primary-light: rgba(96, 165, 250, 0.15);
+    --tf-primary-focus: rgba(96, 165, 250, 0.3);
+    
+    /* 深色模式背景 */
+    --tf-bg-primary: #1e1e2e;
+    --tf-bg-secondary: #252536;
+    --tf-bg-tertiary: #2d2d3f;
+    --tf-bg-hover: #313244;
+    --tf-bg-active: #45475a;
+    --tf-bg-overlay: rgba(255, 255, 255, 0.03);
+    
+    /* 深色模式文字 */
+    --tf-text-primary: #cdd6f4;
+    --tf-text-secondary: #a6adc8;
+    --tf-text-muted: #6c7086;
+    --tf-text-inverse: #1e1e2e;
+    
+    /* 深色模式边框 */
+    --tf-border: #313244;
+    --tf-border-light: #45475a;
+    --tf-border-dark: #585b70;
+    
+    /* 焦点状态 */
+    --tf-focus-ring: rgba(96, 165, 250, 0.4);
+    
+    /* 深色模式阴影 */
+    --tf-shadow-xs: 0 1px 2px rgba(0, 0, 0, 0.2);
+    --tf-shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.3), 0 1px 2px rgba(0, 0, 0, 0.15);
+    --tf-shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.4), 0 2px 4px -1px rgba(0, 0, 0, 0.2);
+    --tf-shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.4), 0 4px 6px -2px rgba(0, 0, 0, 0.2);
+    --tf-shadow-xl: 0 20px 25px -5px rgba(0, 0, 0, 0.5), 0 10px 10px -5px rgba(0, 0, 0, 0.25);
+    
+    /* 深色模式毛玻璃效果 */
+    --tf-bg-glass: rgba(30, 30, 46, 0.85);
+    --tf-bg-glass-hover: rgba(30, 30, 46, 0.95);
 }
 
 .tf-hidden {
@@ -219,7 +346,213 @@ body {
     font-size: 14px;
 }
 
-/* Group Selector - Chrome标签栏风格 */
+/* 搜索清除按钮 */
+.tf-search-clear {
+    position: absolute;
+    right: 4px;
+    padding: 4px;
+    color: var(--tf-text-muted);
+    background: transparent;
+    border: none;
+    cursor: pointer;
+    border-radius: var(--tf-radius);
+    opacity: 0;
+    transition: var(--tf-transition);
+}
+
+.tf-search-box:hover .tf-search-clear,
+.tf-search-box:focus-within .tf-search-clear {
+    opacity: 1;
+}
+
+.tf-search-clear:hover {
+    color: var(--tf-text-secondary);
+    background: var(--tf-bg-hover);
+}
+
+/* 搜索建议下拉框 */
+.tf-search-suggestions {
+    position: absolute;
+    top: 100%;
+    left: var(--tf-spacing-md);
+    right: var(--tf-spacing-md);
+    margin-top: 2px;
+    background: var(--tf-bg-primary);
+    border: 1px solid var(--tf-border);
+    border-radius: var(--tf-radius-lg);
+    box-shadow: var(--tf-shadow-lg);
+    z-index: 1000;
+    max-height: 300px;
+    overflow-y: auto;
+    animation: tf-fade-in 0.15s ease;
+}
+
+@keyframes tf-fade-in {
+    from {
+        opacity: 0;
+        transform: translateY(-4px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.tf-search-suggestions-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: var(--tf-spacing-sm) var(--tf-spacing-md);
+    border-bottom: 1px solid var(--tf-border-light);
+}
+
+.tf-search-suggestions-title {
+    font-size: var(--tf-font-size-xs);
+    color: var(--tf-text-muted);
+    font-weight: 500;
+    text-transform: uppercase;
+    letter-spacing: 0.3px;
+}
+
+.tf-btn-xs {
+    font-size: var(--tf-font-size-xs);
+    padding: 2px 6px;
+    color: var(--tf-primary);
+    background: transparent;
+    border: none;
+    cursor: pointer;
+    border-radius: var(--tf-radius);
+}
+
+.tf-btn-xs:hover {
+    background: var(--tf-primary-light);
+}
+
+.tf-search-suggestions-list {
+    padding: var(--tf-spacing-xs) 0;
+}
+
+.tf-search-suggestion-item {
+    display: flex;
+    align-items: center;
+    gap: var(--tf-spacing-md);
+    padding: var(--tf-spacing-sm) var(--tf-spacing-md);
+    cursor: pointer;
+    transition: var(--tf-transition);
+}
+
+.tf-search-suggestion-item:hover,
+.tf-search-suggestion-item.tf-suggestion-active {
+    background: var(--tf-bg-hover);
+}
+
+.tf-search-suggestion-item.tf-suggestion-active {
+    background: var(--tf-primary-light);
+}
+
+.tf-suggestion-icon {
+    font-size: 14px;
+    flex-shrink: 0;
+    width: 20px;
+    text-align: center;
+}
+
+.tf-suggestion-text {
+    flex: 1;
+    font-size: var(--tf-font-size-sm);
+    color: var(--tf-text-primary);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.tf-suggestion-highlight {
+    color: var(--tf-primary);
+    font-weight: 500;
+}
+
+.tf-suggestion-type {
+    font-size: var(--tf-font-size-xs);
+    color: var(--tf-text-muted);
+    background: var(--tf-bg-secondary);
+    padding: 2px 6px;
+    border-radius: var(--tf-radius);
+    flex-shrink: 0;
+}
+
+.tf-suggestion-meta {
+    font-size: var(--tf-font-size-xs);
+    color: var(--tf-text-muted);
+    flex-shrink: 0;
+}
+
+/* 搜索结果统计 */
+.tf-search-stats {
+    padding: var(--tf-spacing-sm) var(--tf-spacing-md);
+    background: var(--tf-bg-secondary);
+    border-bottom: 1px solid var(--tf-border-light);
+}
+
+.tf-search-results-count {
+    font-size: var(--tf-font-size-xs);
+    color: var(--tf-text-secondary);
+}
+
+/* 空状态优化 */
+.tf-empty-state {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: var(--tf-spacing-xl) var(--tf-spacing-md);
+    text-align: center;
+}
+
+.tf-empty-icon {
+    font-size: 40px;
+    margin-bottom: var(--tf-spacing-md);
+}
+
+.tf-empty-title {
+    font-size: var(--tf-font-size-md);
+    font-weight: 500;
+    color: var(--tf-text-primary);
+    margin-bottom: var(--tf-spacing-sm);
+}
+
+.tf-empty-subtitle {
+    font-size: var(--tf-font-size-sm);
+    color: var(--tf-text-secondary);
+    margin-bottom: var(--tf-spacing-md);
+}
+
+.tf-empty-tips {
+    font-size: var(--tf-font-size-xs);
+    color: var(--tf-text-muted);
+}
+
+.tf-empty-tips p {
+    margin-bottom: var(--tf-spacing-sm);
+    font-weight: 500;
+}
+
+.tf-empty-tips ul {
+    list-style: none;
+    padding: 0;
+}
+
+.tf-empty-tips li {
+    padding: 2px 0;
+}
+
+/* 搜索高亮 */
+.tf-search-highlight {
+    background: var(--tf-primary-light);
+    color: var(--tf-primary);
+    font-weight: 500;
+    padding: 0 2px;
+    border-radius: 2px;
+}
 .tf-group-selector {
     display: flex;
     border-bottom: 1px solid var(--tf-border-light);
@@ -575,6 +908,111 @@ tab-item {
     gap: var(--tf-spacing-md);
     font-size: var(--tf-font-size-xs);
     color: var(--tf-text-muted);
+}
+
+/* 批量操作工具栏 */
+.tf-batch-actions {
+    display: flex;
+    align-items: center;
+    gap: var(--tf-spacing-sm);
+    flex: 1;
+    min-width: 0;
+    overflow-x: auto;
+}
+
+.tf-batch-actions .tf-btn {
+    flex-shrink: 0;
+}
+
+/* 全选按钮特殊样式 */
+.tf-btn-partial {
+    position: relative;
+}
+
+.tf-btn-partial::after {
+    content: '';
+    position: absolute;
+    bottom: 0;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 40%;
+    height: 2px;
+    background: var(--tf-primary);
+}
+
+/* 当前窗口高亮 */
+.tf-window-current {
+    background: var(--tf-primary-light) !important;
+    border-left: 3px solid var(--tf-primary) !important;
+}
+
+/* 选择模式下的标签页样式 */
+.tf-tab.selected {
+    background: var(--tf-primary-light);
+    border-left: 3px solid var(--tf-primary);
+}
+
+.tf-tab.selected::before {
+    display: none;
+}
+
+/* 选择模式指示器 */
+.tf-selection-indicator {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    background: var(--tf-primary);
+    color: var(--tf-text-inverse);
+    padding: 4px 8px;
+    font-size: var(--tf-font-size-xs);
+    text-align: center;
+    z-index: 1000;
+    animation: tf-slideInDown 0.2s var(--tf-ease-out);
+}
+
+/* 批量操作按钮禁用状态 */
+.tf-btn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+    pointer-events: none;
+}
+
+.tf-btn:disabled:hover {
+    transform: none;
+    box-shadow: none;
+}
+
+/* 右键菜单快捷键样式 */
+.tf-menu-shortcut {
+    margin-left: auto;
+    font-size: 11px;
+    color: var(--tf-text-muted);
+    opacity: 0.7;
+}
+
+.tf-menu-item:hover .tf-menu-shortcut {
+    opacity: 0.9;
+}
+
+/* 选择模式下的分组选择 */
+.tf-group-select-all {
+    display: flex;
+    align-items: center;
+    gap: var(--tf-spacing-sm);
+    padding: var(--tf-spacing-sm) var(--tf-spacing-md);
+    background: var(--tf-bg-secondary);
+    border-bottom: 1px solid var(--tf-border-light);
+    font-size: var(--tf-font-size-xs);
+    color: var(--tf-text-secondary);
+}
+
+.tf-group-select-all input[type="checkbox"] {
+    width: 14px;
+    height: 14px;
+    margin: 0;
+    accent-color: var(--tf-primary);
+    cursor: pointer;
 }
 
 /* Context Menu - Chrome风格 */
@@ -1096,4 +1534,588 @@ tab-item {
     .tf-tab.active {
         border-left-width: 4px;
     }
+}
+
+/* ========== 增强的 UI 效果 ========== */
+
+/* 毛玻璃效果 */
+.tf-glass {
+    background: var(--tf-bg-glass);
+    backdrop-filter: var(--tf-blur-md);
+    -webkit-backdrop-filter: var(--tf-blur-md);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.tf-glass-dark {
+    background: var(--tf-bg-glass);
+    backdrop-filter: var(--tf-blur-md);
+    -webkit-backdrop-filter: var(--tf-blur-md);
+    border: 1px solid rgba(0, 0, 0, 0.1);
+}
+
+/* 上下文菜单毛玻璃效果 */
+.tf-context-menu {
+    background: var(--tf-bg-glass);
+    backdrop-filter: var(--tf-blur-md);
+    -webkit-backdrop-filter: var(--tf-blur-md);
+    box-shadow: var(--tf-shadow-lg);
+}
+
+/* 模态框毛玻璃效果 */
+.tf-modal-backdrop {
+    background: rgba(0, 0, 0, 0.4);
+    backdrop-filter: var(--tf-blur-sm);
+    -webkit-backdrop-filter: var(--tf-blur-sm);
+}
+
+.tf-modal-panel {
+    background: var(--tf-bg-glass);
+    backdrop-filter: var(--tf-blur-md);
+    -webkit-backdrop-filter: var(--tf-blur-md);
+    box-shadow: var(--tf-shadow-xl);
+}
+
+/* 加载遮罩毛玻璃效果 */
+.tf-loading {
+    background: rgba(255, 255, 255, 0.8);
+    backdrop-filter: var(--tf-blur-sm);
+    -webkit-backdrop-filter: var(--tf-blur-sm);
+}
+
+/* 搜索建议下拉框毛玻璃效果 */
+.tf-search-suggestions {
+    background: var(--tf-bg-glass);
+    backdrop-filter: var(--tf-blur-md);
+    -webkit-backdrop-filter: var(--tf-blur-md);
+    box-shadow: var(--tf-shadow-lg);
+}
+
+/* ========== 增强的动画效果 ========== */
+
+/* 淡入淡出动画 */
+@keyframes tf-fadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(-4px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+@keyframes tf-fadeOut {
+    from {
+        opacity: 1;
+        transform: translateY(0);
+    }
+    to {
+        opacity: 0;
+        transform: translateY(-4px);
+    }
+}
+
+/* 缩放动画 */
+@keyframes tf-scaleIn {
+    from {
+        opacity: 0;
+        transform: scale(0.95);
+    }
+    to {
+        opacity: 1;
+        transform: scale(1);
+    }
+}
+
+@keyframes tf-scaleOut {
+    from {
+        opacity: 1;
+        transform: scale(1);
+    }
+    to {
+        opacity: 0;
+        transform: scale(0.95);
+    }
+}
+
+/* 滑入滑出动画 */
+@keyframes tf-slideInLeft {
+    from {
+        opacity: 0;
+        transform: translateX(-20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateX(0);
+    }
+}
+
+@keyframes tf-slideInRight {
+    from {
+        opacity: 0;
+        transform: translateX(20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateX(0);
+    }
+}
+
+@keyframes tf-slideInUp {
+    from {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+@keyframes tf-slideInDown {
+    from {
+        opacity: 0;
+        transform: translateY(-20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* 脉冲动画 */
+@keyframes tf-pulse {
+    0%, 100% {
+        opacity: 1;
+    }
+    50% {
+        opacity: 0.5;
+    }
+}
+
+/* 闪烁动画 */
+@keyframes tf-shimmer {
+    0% {
+        background-position: -200% 0;
+    }
+    100% {
+        background-position: 200% 0;
+    }
+}
+
+/* 弹跳动画 */
+@keyframes tf-bounce {
+    0%, 20%, 53%, 80%, 100% {
+        transform: translateY(0);
+    }
+    40%, 43% {
+        transform: translateY(-4px);
+    }
+    70% {
+        transform: translateY(-2px);
+    }
+    90% {
+        transform: translateY(-1px);
+    }
+}
+
+/* 晃动动画 */
+@keyframes tf-shake {
+    0%, 100% {
+        transform: translateX(0);
+    }
+    10%, 30%, 50%, 70%, 90% {
+        transform: translateX(-2px);
+    }
+    20%, 40%, 60%, 80% {
+        transform: translateX(2px);
+    }
+}
+
+/* ========== 增强的按钮反馈效果 ========== */
+
+/* 按钮基础样式优化 */
+.tf-btn {
+    position: relative;
+    overflow: hidden;
+    transition: var(--tf-transition-bounce);
+}
+
+.tf-btn::after {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 0;
+    height: 0;
+    background: rgba(255, 255, 255, 0.3);
+    border-radius: 50%;
+    transform: translate(-50%, -50%);
+    transition: width 0.3s, height 0.3s;
+}
+
+.tf-btn:hover::after {
+    width: 200%;
+    height: 200%;
+}
+
+.tf-btn:active {
+    transform: scale(0.97);
+}
+
+.tf-btn:active::after {
+    background: rgba(255, 255, 255, 0.2);
+    transition: width 0s, height 0s;
+}
+
+/* 主按钮增强 */
+.tf-btn-primary {
+    background: linear-gradient(135deg, var(--tf-primary) 0%, var(--tf-primary-hover) 100%);
+    box-shadow: 0 1px 3px rgba(66, 133, 244, 0.3);
+    transition: all 0.2s var(--tf-ease-out);
+}
+
+.tf-btn-primary:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 8px rgba(66, 133, 244, 0.4);
+}
+
+.tf-btn-primary:active {
+    transform: translateY(0) scale(0.98);
+    box-shadow: 0 1px 2px rgba(66, 133, 244, 0.3);
+}
+
+/* 次按钮增强 */
+.tf-btn-secondary {
+    background: var(--tf-bg-secondary);
+    border: 1px solid var(--tf-border);
+}
+
+.tf-btn-secondary:hover {
+    background: var(--tf-bg-hover);
+    border-color: var(--tf-border-dark);
+}
+
+/* 图标按钮增强 */
+.tf-btn-icon {
+    border-radius: var(--tf-radius-md);
+}
+
+.tf-btn-icon:hover {
+    background: var(--tf-bg-hover);
+}
+
+.tf-btn-icon:active {
+    background: var(--tf-bg-active);
+}
+
+/* ========== 标签页和分组动画效果 ========== */
+
+/* 标签项悬停效果 */
+.tf-tab {
+    transition: var(--tf-transition);
+}
+
+.tf-tab:hover {
+    background: var(--tf-bg-hover);
+}
+
+.tf-tab::before {
+    content: '';
+    position: absolute;
+    left: 0;
+    top: 0;
+    bottom: 0;
+    width: 0;
+    background: var(--tf-primary);
+    transition: width 0.15s var(--tf-ease-out);
+}
+
+.tf-tab.active::before {
+    width: 3px;
+}
+
+.tf-tab:hover::before {
+    width: 2px;
+}
+
+/* 分组标题悬停效果 */
+.tf-group-header {
+    transition: var(--tf-transition);
+}
+
+.tf-group-header:hover {
+    background: var(--tf-bg-hover);
+}
+
+/* 分组折叠动画 */
+.tf-group-content {
+    transition: max-height 0.3s var(--tf-ease-in-out), opacity 0.3s var(--tf-ease-in-out);
+    max-height: 2000px;
+    opacity: 1;
+    overflow: hidden;
+}
+
+.tf-group.collapsed .tf-group-content {
+    max-height: 0;
+    opacity: 0;
+}
+
+/* 分组展开/折叠图标动画 */
+.tf-group-toggle {
+    transition: transform 0.3s var(--tf-ease-in-out);
+}
+
+.tf-group.collapsed .tf-group-toggle {
+    transform: rotate(-90deg);
+}
+
+/* ========== 搜索输入框增强效果 ========== */
+
+.tf-search-box {
+    transition: var(--tf-transition);
+}
+
+.tf-search-box:focus-within {
+    transform: scale(1.01);
+}
+
+.tf-search-input {
+    transition: var(--tf-transition);
+}
+
+.tf-search-input:focus {
+    box-shadow: 0 0 0 3px var(--tf-primary-focus);
+}
+
+/* ========== 滚动条美化 ========== */
+
+/* WebKit 浏览器 */
+.tf-group-container::-webkit-scrollbar,
+.tf-folder-tree::-webkit-scrollbar,
+.tf-create-group-tab-list::-webkit-scrollbar,
+.tf-search-suggestions::-webkit-scrollbar {
+    width: 6px;
+}
+
+.tf-group-container::-webkit-scrollbar-track,
+.tf-folder-tree::-webkit-scrollbar-track,
+.tf-create-group-tab-list::-webkit-scrollbar-track,
+.tf-search-suggestions::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+.tf-group-container::-webkit-scrollbar-thumb,
+.tf-folder-tree::-webkit-scrollbar-thumb,
+.tf-create-group-tab-list::-webkit-scrollbar-thumb,
+.tf-search-suggestions::-webkit-scrollbar-thumb {
+    background: var(--tf-border);
+    border-radius: 3px;
+}
+
+.tf-group-container::-webkit-scrollbar-thumb:hover,
+.tf-folder-tree::-webkit-scrollbar-thumb:hover,
+.tf-create-group-tab-list::-webkit-scrollbar-thumb:hover,
+.tf-search-suggestions::-webkit-scrollbar-thumb:hover {
+    background: var(--tf-border-dark);
+}
+
+/* ========== 焦点状态增强 ========== */
+
+.tf-btn:focus-visible,
+.tf-group-btn:focus-visible,
+.tf-search-input:focus-visible,
+.tf-tab-action-btn:focus-visible,
+.tf-menu-item:focus-visible {
+    outline: 2px solid var(--tf-primary);
+    outline-offset: 2px;
+}
+
+/* ========== 深色模式特定优化 ========== */
+
+@media (prefers-color-scheme: dark) {
+    /* 深色模式下的毛玻璃效果调整 */
+    .tf-glass {
+        background: rgba(30, 30, 46, 0.85);
+        border: 1px solid rgba(255, 255, 255, 0.05);
+    }
+    
+    .tf-context-menu {
+        background: rgba(37, 37, 54, 0.95);
+        border: 1px solid rgba(255, 255, 255, 0.08);
+    }
+    
+    .tf-modal-panel {
+        background: rgba(37, 37, 54, 0.95);
+        border: 1px solid rgba(255, 255, 255, 0.08);
+    }
+    
+    .tf-modal-backdrop {
+        background: rgba(0, 0, 0, 0.6);
+    }
+    
+    .tf-search-suggestions {
+        background: rgba(37, 37, 54, 0.95);
+        border: 1px solid rgba(255, 255, 255, 0.08);
+    }
+    
+    .tf-loading {
+        background: rgba(30, 30, 46, 0.9);
+    }
+    
+    /* 深色模式下的滚动条 */
+    .tf-group-container::-webkit-scrollbar-thumb,
+    .tf-folder-tree::-webkit-scrollbar-thumb,
+    .tf-create-group-tab-list::-webkit-scrollbar-thumb,
+    .tf-search-suggestions::-webkit-scrollbar-thumb {
+        background: rgba(255, 255, 255, 0.1);
+    }
+    
+    .tf-group-container::-webkit-scrollbar-thumb:hover,
+    .tf-folder-tree::-webkit-scrollbar-thumb:hover,
+    .tf-create-group-tab-list::-webkit-scrollbar-thumb:hover,
+    .tf-search-suggestions::-webkit-scrollbar-thumb:hover {
+        background: rgba(255, 255, 255, 0.15);
+    }
+    
+    /* 深色模式下的主按钮渐变 */
+    .tf-btn-primary {
+        background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+    }
+    
+    /* 深色模式下的阴影 */
+    .tf-modal-panel,
+    .tf-context-menu,
+    .tf-search-suggestions {
+        box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+    }
+}
+
+/* 手动深色模式类 */
+.tf-dark-mode .tf-glass {
+    background: rgba(30, 30, 46, 0.85);
+    border: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.tf-dark-mode .tf-context-menu {
+    background: rgba(37, 37, 54, 0.95);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.tf-dark-mode .tf-modal-panel {
+    background: rgba(37, 37, 54, 0.95);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.tf-dark-mode .tf-modal-backdrop {
+    background: rgba(0, 0, 0, 0.6);
+}
+
+.tf-dark-mode .tf-search-suggestions {
+    background: rgba(37, 37, 54, 0.95);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.tf-dark-mode .tf-loading {
+    background: rgba(30, 30, 46, 0.9);
+}
+
+.tf-dark-mode .tf-btn-primary {
+    background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+}
+
+/* ========== 主题切换动画 ========== */
+
+/* 平滑主题过渡 */
+* {
+    transition: background-color 0.3s var(--tf-ease-in-out),
+                border-color 0.3s var(--tf-ease-in-out),
+                color 0.3s var(--tf-ease-in-out),
+                box-shadow 0.3s var(--tf-ease-in-out);
+}
+
+/* 排除不需要过渡的属性 */
+.tf-loading-spinner,
+.tf-tab,
+.tf-group-header {
+    transition: background-color 0.15s var(--tf-ease-out),
+                border-color 0.15s var(--tf-ease-out),
+                color 0.15s var(--tf-ease-out),
+                transform 0.15s var(--tf-ease-out),
+                box-shadow 0.15s var(--tf-ease-out);
+}
+
+/* ========== 骨架屏加载效果 ========== */
+
+.tf-skeleton {
+    background: linear-gradient(
+        90deg,
+        var(--tf-bg-secondary) 25%,
+        var(--tf-bg-tertiary) 37%,
+        var(--tf-bg-secondary) 63%
+    );
+    background-size: 400% 100%;
+    animation: tf-shimmer 1.4s ease-in-out infinite;
+}
+
+/* ========== 空状态增强 ========== */
+
+.tf-empty-state {
+    animation: tf-fadeIn 0.3s var(--tf-ease-out);
+}
+
+.tf-empty-icon {
+    animation: tf-bounce 2s infinite;
+}
+
+/* ========== Toast 通知增强 ========== */
+
+.tf-toast {
+    background: linear-gradient(135deg, #323232 0%, #1a1a1a 100%);
+    box-shadow: var(--tf-shadow-lg);
+}
+
+.tf-toast.success {
+    background: linear-gradient(135deg, #15803d 0%, #166534 100%);
+}
+
+.tf-toast.error {
+    background: linear-gradient(135deg, #dc2626 0%, #b91c1c 100%);
+}
+
+.tf-toast.warning {
+    background: linear-gradient(135deg, #d97706 0%, #b45309 100%);
+    color: #fff;
+}
+
+.tf-toast.info {
+    background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%);
+}
+
+/* ========== 选中状态增强 ========== */
+
+.tf-tab.selected {
+    background: var(--tf-primary-light);
+    border-left: 3px solid var(--tf-primary);
+}
+
+.tf-tab.selected::before {
+    display: none;
+}
+
+/* ========== 禁用状态 ========== */
+
+.tf-btn:disabled,
+.tf-group-btn:disabled,
+.tf-tab-action-btn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+    pointer-events: none;
+}
+
+.tf-btn:disabled:hover,
+.tf-group-btn:disabled:hover,
+.tf-tab-action-btn:disabled:hover {
+    transform: none;
+    box-shadow: none;
 }

@@ -44,7 +44,21 @@
                         <path d="M21 21l-4.35-4.35"/>
                     </svg>
                 </span>
-                <input type="text" id="search-input" placeholder="搜索标签页" class="tf-search-input">
+                <input type="text" id="search-input" placeholder="搜索标签页 (支持: 标题/备注/URL/域名)" class="tf-search-input" autocomplete="off">
+                <button id="search-clear-btn" class="tf-btn tf-btn-icon tf-search-clear tf-hidden" type="button" aria-label="清除搜索">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <line x1="18" y1="6" x2="6" y2="18"/>
+                        <line x1="6" y1="6" x2="18" y2="18"/>
+                    </svg>
+                </button>
+            </div>
+            <!-- 搜索建议和历史记录 -->
+            <div id="search-suggestions" class="tf-search-suggestions tf-hidden">
+                <div class="tf-search-suggestions-header">
+                    <span class="tf-search-suggestions-title">搜索建议</span>
+                    <button id="clear-history-btn" class="tf-btn tf-btn-xs tf-hidden" type="button">清除历史</button>
+                </div>
+                <div id="search-suggestions-list" class="tf-search-suggestions-list"></div>
             </div>
         </div>
 
@@ -86,12 +100,43 @@
         <!-- 底部操作栏 -->
         <footer class="tf-footer">
             <div class="tf-footer-actions">
-                <button id="batch-favorite-btn" class="tf-btn tf-btn-secondary tf-hidden" title="转收藏选中的标签页">
-                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"></path>
-                    </svg>
-                    <span>转收藏选中 (0)</span>
-                </button>
+                <div id="batch-actions" class="tf-batch-actions tf-hidden">
+                    <button id="batch-select-all-btn" class="tf-btn tf-btn-secondary" title="全选/取消全选">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M9 11l3 3L22 4"/>
+                            <path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/>
+                        </svg>
+                        <span>全选</span>
+                    </button>
+                    <button id="batch-close-btn" class="tf-btn tf-btn-secondary" title="关闭选中的标签页">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <line x1="18" y1="6" x2="6" y2="18"/>
+                            <line x1="6" y1="6" x2="18" y2="18"/>
+                        </svg>
+                        <span>关闭</span>
+                    </button>
+                    <button id="batch-sleep-btn" class="tf-btn tf-btn-secondary" title="休眠选中的标签页">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M17 18a5 5 0 0 0-10 0"/>
+                            <path d="M12 14V2"/>
+                            <path d="M4.93 10.93A17 17 0 0 1 12 9a17 17 0 0 1 7.07 1.93"/>
+                        </svg>
+                        <span>休眠</span>
+                    </button>
+                    <button id="batch-move-btn" class="tf-btn tf-btn-secondary" title="移动选中的标签页">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M8 5v14M19 12H5"/>
+                            <polyline points="12 19 19 12 12 5"/>
+                        </svg>
+                        <span>移动</span>
+                    </button>
+                    <button id="batch-favorite-btn" class="tf-btn tf-btn-secondary" title="转收藏选中的标签页">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"></path>
+                        </svg>
+                        <span>收藏</span>
+                    </button>
+                </div>
                 <button id="create-group-btn" class="tf-btn tf-btn-primary">
                     <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                         <line x1="12" y1="5" x2="12" y2="19"/>
@@ -184,6 +229,7 @@
     </div>
 
     <!-- Import custom elements -->
+    <script src="../../utils/tab-search-engine.js"></script>
     <script src="../components/group-item.js"></script>
     <script src="../components/tab-item.js"></script>
     <script src="sidebar.js"></script>

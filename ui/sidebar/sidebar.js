@@ -25,6 +25,10 @@ class SuperTabSidebar {
     this.contextMenuContext = null;
     this.createGroupTabFilterQuery = '';
     this.createGroupSelectedTabUuids = new Set();
+    // 搜索增强
+    this.searchEngine = null;
+    this.searchResults = [];
+    this.isSearching = false;
 
     this.initializeElements();
     this.setupEventListeners();
@@ -69,7 +73,18 @@ class SuperTabSidebar {
       createGroupTabSearchInput: document.getElementById('create-group-tab-search-input'),
       createGroupSelectAllCheckbox: document.getElementById('create-group-select-all-checkbox'),
       createGroupSelectionSummary: document.getElementById('create-group-selection-summary'),
-      createGroupTabList: document.getElementById('create-group-tab-list')
+      createGroupTabList: document.getElementById('create-group-tab-list'),
+      // 搜索增强元素
+      searchClearBtn: document.getElementById('search-clear-btn'),
+      searchSuggestions: document.getElementById('search-suggestions'),
+      searchSuggestionsList: document.getElementById('search-suggestions-list'),
+      clearHistoryBtn: document.getElementById('clear-history-btn'),
+      // 批量操作增强元素
+      batchActions: document.getElementById('batch-actions'),
+      batchSelectAllBtn: document.getElementById('batch-select-all-btn'),
+      batchCloseBtn: document.getElementById('batch-close-btn'),
+      batchSleepBtn: document.getElementById('batch-sleep-btn'),
+      batchMoveBtn: document.getElementById('batch-move-btn')
     };
 
     // Create context menu if it doesn't exist
@@ -84,10 +99,40 @@ class SuperTabSidebar {
   }
 
   setupEventListeners() {
-    // Search functionality
+    // Search functionality - 增强版
     this.elements.searchInput.addEventListener('input', (e) => {
       this.searchQuery = e.target.value;
-      this.filterTabs();
+      this.handleSearchInput(this.searchQuery);
+    });
+
+    this.elements.searchInput.addEventListener('focus', () => {
+      this.showSearchSuggestions();
+    });
+
+    this.elements.searchInput.addEventListener('keydown', (e) => {
+      this.handleSearchKeyDown(e);
+    });
+
+    // 搜索清除按钮
+    if (this.elements.searchClearBtn) {
+      this.elements.searchClearBtn.addEventListener('click', () => {
+        this.clearSearch();
+      });
+    }
+
+    // 清除历史按钮
+    if (this.elements.clearHistoryBtn) {
+      this.elements.clearHistoryBtn.addEventListener('click', () => {
+        this.clearSearchHistory();
+      });
+    }
+
+    // 点击外部关闭搜索建议
+    document.addEventListener('click', (e) => {
+      const searchContainer = document.querySelector('.tf-search-container');
+      if (searchContainer && !searchContainer.contains(e.target)) {
+        this.hideSearchSuggestions();
+      }
     });
 
     // Group switching
@@ -118,6 +163,31 @@ class SuperTabSidebar {
     this.elements.batchFavoriteBtn.addEventListener('click', () => {
       this.bookmarkSelectedTabs();
     });
+
+    // 批量操作增强按钮
+    if (this.elements.batchSelectAllBtn) {
+      this.elements.batchSelectAllBtn.addEventListener('click', () => {
+        this.toggleSelectAll();
+      });
+    }
+
+    if (this.elements.batchCloseBtn) {
+      this.elements.batchCloseBtn.addEventListener('click', () => {
+        this.closeSelectedTabs();
+      });
+    }
+
+    if (this.elements.batchSleepBtn) {
+      this.elements.batchSleepBtn.addEventListener('click', () => {
+        this.sleepSelectedTabs();
+      });
+    }
+
+    if (this.elements.batchMoveBtn) {
+      this.elements.batchMoveBtn.addEventListener('click', () => {
+        this.showMoveTabsDialog();
+      });
+    }
 
     // Global event listeners
     document.addEventListener('click', (e) => {
@@ -755,11 +825,38 @@ class SuperTabSidebar {
           this.showNoteDialog(tabUuid);
         }
         break;
+      case 'set-alias':
+        if (tabUuid) {
+          this.showAliasDialog(tabUuid, tabData);
+        }
+        break;
       case 'move-to-group':
         await this.showMoveToGroupDialog(tabUuid);
         break;
       case 'copy-url':
         await this.copyTabUrl(tabData?.url || '');
+        break;
+      case 'copy-title':
+        await this.copyTabTitle(tabData?.title || '');
+        break;
+      case 'pin':
+        await this.toggleTabPin(tabId, tabUuid);
+        break;
+      case 'mute':
+        await this.toggleTabMute(tabId, tabUuid);
+        break;
+      case 'discard':
+        await this.discardTab(tabId, tabUuid);
+        break;
+      case 'close-others':
+        if (tabUuid) {
+          await this.closeOtherTabs(tabUuid);
+        }
+        break;
+      case 'close-to-right':
+        if (tabUuid) {
+          await this.closeTabsToRight(tabUuid);
+        }
         break;
       case 'close':
         if (Number.isInteger(tabId)) {
@@ -779,6 +876,18 @@ class SuperTabSidebar {
       case 'collapse-all':
         this.setAllGroupCollapsed(true);
         break;
+      case 'select-all-tabs':
+        await this.selectAllTabsInGroup(groupData);
+        break;
+      case 'close-group-tabs':
+        await this.closeAllTabsInGroup(groupData);
+        break;
+      case 'sleep-group-tabs':
+        await this.sleepAllTabsInGroup(groupData);
+        break;
+      case 'rename-group':
+        await this.renameGroup(groupData);
+        break;
       case 'delete':
         await this.deleteGroupFromContextMenu(groupData);
         break;
@@ -787,12 +896,318 @@ class SuperTabSidebar {
     }
   }
 
-  setAllGroupCollapsed(collapsed) {
-    this.groups = (this.groups || []).map(group => ({
-      ...group,
-      collapsed
-    }));
+  // ========== 新增快捷操作方法 ==========
+
+  async copyTabTitle(title) {
+    const text = typeof title === 'string' ? title.trim() : '';
+    if (!text) {
+      this.showToast('标题为空，无法复制', 'error');
+      return;
+    }
+
+    try {
+      if (navigator.clipboard?.writeText) {
+        await navigator.clipboard.writeText(text);
+      } else {
+        const textArea = document.createElement('textarea');
+        textArea.value = text;
+        document.body.appendChild(textArea);
+        textArea.select();
+        document.execCommand('copy');
+        document.body.removeChild(textArea);
+      }
+      this.showToast('标题已复制', 'success');
+    } catch (error) {
+      console.error('Failed to copy tab title:', error);
+      this.showToast('复制标题失败', 'error');
+    }
+  }
+
+  showAliasDialog(tabUuid, tabData) {
+    if (!tabUuid) return;
+    
+    const currentAlias = tabData?.alias || '';
+    const newAlias = prompt(
+      `请输入标签页别名（留空则清除别名）：`,
+      currentAlias
+    );
+    
+    if (newAlias === null) return;
+    
+    this.setTabAlias(tabUuid, newAlias.trim());
+  }
+
+  async setTabAlias(tabUuid, alias) {
+    try {
+      const response = await chrome.runtime.sendMessage({
+        action: 'setTabAlias',
+        data: {
+          tabUuid,
+          alias
+        }
+      });
+      
+      if (response?.success) {
+        if (alias && alias.trim()) {
+          this.showToast(`已设置别名: ${alias}`, 'success');
+        } else {
+          this.showToast('已清除别名', 'success');
+        }
+        await this.loadData();
+      } else {
+        throw new Error(response?.error || '设置别名失败');
+      }
+    } catch (error) {
+      console.error('Failed to set alias:', error);
+      this.showToast('设置别名失败', 'error');
+    }
+  }
+
+  async toggleTabPin(tabId, tabUuid) {
+    if (!Number.isInteger(tabId)) {
+      this.showToast('无法固定此标签页', 'error');
+      return;
+    }
+
+    try {
+      // 使用 Chrome API 获取当前标签页的固定状态
+      const currentTab = await chrome.tabs.get(tabId);
+      const newPinnedState = !currentTab.pinned;
+      
+      await chrome.tabs.update(tabId, { pinned: newPinnedState });
+      
+      // 更新存储中的标签页数据
+      await chrome.runtime.sendMessage({
+        action: 'updateTabPinned',
+        data: {
+          tabUuid,
+          pinned: newPinnedState
+        }
+      });
+      
+      this.showToast(
+        newPinnedState ? '标签页已固定' : '标签页已取消固定',
+        'success'
+      );
+      await this.loadData();
+    } catch (error) {
+      console.error('Failed to toggle pin:', error);
+      this.showToast('操作失败', 'error');
+    }
+  }
+
+  async toggleTabMute(tabId, tabUuid) {
+    if (!Number.isInteger(tabId)) {
+      this.showToast('无法操作此标签页', 'error');
+      return;
+    }
+
+    try {
+      const currentTab = await chrome.tabs.get(tabId);
+      const newMutedState = !currentTab.mutedInfo?.muted;
+      
+      await chrome.tabs.update(tabId, { muted: newMutedState });
+      
+      this.showToast(
+        newMutedState ? '标签页已静音' : '标签页已取消静音',
+        'success'
+      );
+      await this.loadData();
+    } catch (error) {
+      console.error('Failed to toggle mute:', error);
+      this.showToast('操作失败', 'error');
+    }
+  }
+
+  async discardTab(tabId, tabUuid) {
+    if (!Number.isInteger(tabId)) {
+      this.showToast('无法休眠此标签页', 'error');
+      return;
+    }
+
+    try {
+      // 检查是否是当前活动标签页
+      const currentTab = await chrome.tabs.get(tabId);
+      
+      if (currentTab.active) {
+        this.showToast('无法休眠当前活动标签页', 'info');
+        return;
+      }
+      
+      // 使用 discard API 休眠标签页
+      if (chrome.tabs.discard) {
+        await chrome.tabs.discard(tabId);
+      }
+      
+      // 更新存储中的标签页状态
+      await chrome.runtime.sendMessage({
+        action: 'updateTabDiscarded',
+        data: {
+          tabUuid,
+          discarded: true
+        }
+      });
+      
+      this.showToast('标签页已休眠，内存已释放', 'success');
+      await this.loadData();
+    } catch (error) {
+      console.error('Failed to discard tab:', error);
+      this.showToast('休眠失败', 'error');
+    }
+  }
+
+  async selectAllTabsInGroup(groupData) {
+    if (!groupData) return;
+    
+    const groupTabs = groupData.tabs || [];
+    
+    if (groupTabs.length === 0) {
+      this.showToast('该分组中没有标签页', 'info');
+      return;
+    }
+    
+    // 进入选择模式
+    if (!this.selectionMode) {
+      this.selectionMode = true;
+    }
+    
+    // 选中该分组的所有标签页
+    groupTabs.forEach(tab => {
+      if (tab && tab.uuid) {
+        this.selectedTabUuids.add(tab.uuid);
+      }
+    });
+    
     this.renderGroups();
+    this.updateSelectionUI();
+    this.showToast(`已选中 ${groupTabs.length} 个标签页`, 'success');
+  }
+
+  async closeAllTabsInGroup(groupData) {
+    if (!groupData) return;
+    
+    const groupTabs = groupData.tabs || [];
+    const tabCount = groupTabs.length;
+    
+    if (tabCount === 0) {
+      this.showToast('该分组中没有标签页', 'info');
+      return;
+    }
+    
+    const confirmed = confirm(`确定要关闭分组 "${groupData.name || '未命名分组'}" 中的 ${tabCount} 个标签页吗？`);
+    if (!confirmed) return;
+    
+    try {
+      const chromeTabIds = [];
+      const tabUuids = [];
+      
+      groupTabs.forEach(tab => {
+        if (Number.isInteger(tab.id)) {
+          chromeTabIds.push(tab.id);
+        }
+        if (tab.uuid) {
+          tabUuids.push(tab.uuid);
+        }
+      });
+      
+      // 使用 Chrome API 关闭标签页
+      if (chromeTabIds.length > 0 && chrome.tabs) {
+        await chrome.tabs.remove(chromeTabIds);
+      }
+      
+      // 通知 background
+      await chrome.runtime.sendMessage({
+        action: 'closeTabs',
+        data: {
+          tabUuids,
+          includePinned: false
+        }
+      });
+      
+      this.showToast(`已关闭 ${tabCount} 个标签页`, 'success');
+      await this.loadData();
+    } catch (error) {
+      console.error('Failed to close group tabs:', error);
+      this.showToast('关闭标签页失败', 'error');
+    }
+  }
+
+  async sleepAllTabsInGroup(groupData) {
+    if (!groupData) return;
+    
+    const groupTabs = groupData.tabs || [];
+    const tabCount = groupTabs.length;
+    
+    if (tabCount === 0) {
+      this.showToast('该分组中没有标签页', 'info');
+      return;
+    }
+    
+    const confirmed = confirm(`确定要休眠分组 "${groupData.name || '未命名分组'}" 中的 ${tabCount} 个标签页吗？`);
+    if (!confirmed) return;
+    
+    try {
+      let sleptCount = 0;
+      const activeTabId = this.getCurrentActiveTabId();
+      
+      for (const tab of groupTabs) {
+        if (tab.id === activeTabId) {
+          continue; // 跳过当前活动标签页
+        }
+        
+        try {
+          if (Number.isInteger(tab.id) && chrome.tabs && chrome.tabs.discard) {
+            await chrome.tabs.discard(tab.id);
+            sleptCount++;
+          }
+        } catch (e) {
+          console.warn('Failed to discard tab:', e);
+        }
+      }
+      
+      this.showToast(`已休眠 ${sleptCount} 个标签页，释放内存`, 'success');
+      await this.loadData();
+    } catch (error) {
+      console.error('Failed to sleep group tabs:', error);
+      this.showToast('休眠标签页失败', 'error');
+    }
+  }
+
+  async renameGroup(groupData) {
+    if (!groupData || !groupData.id) return;
+    
+    const currentName = groupData.name || '';
+    const newName = prompt(
+      `请输入新的分组名称：`,
+      currentName
+    );
+    
+    if (newName === null || !newName.trim()) {
+      if (newName !== null) {
+        this.showToast('分组名称不能为空', 'error');
+      }
+      return;
+    }
+    
+    try {
+      const response = await chrome.runtime.sendMessage({
+        action: 'renameGroup',
+        data: {
+          groupId: groupData.id,
+          newName: newName.trim()
+        }
+      });
+      
+      if (response?.success) {
+        this.showToast(`分组已重命名为: ${newName.trim()}`, 'success');
+        await this.loadData();
+      } else {
+        throw new Error(response?.error || '重命名失败');
+      }
+    } catch (error) {
+      console.error('Failed to rename group:', error);
+      this.showToast('重命名失败', 'error');
+    }
   }
 
   async deleteGroupFromContextMenu(groupData) {
@@ -891,6 +1306,10 @@ class SuperTabSidebar {
 
   getContextMenuHTML(context) {
     if (context.type === 'tab') {
+      const tab = context.data || {};
+      const hasNote = tab.note && tab.note.trim();
+      const hasAlias = tab.alias && tab.alias.trim();
+      
       return `
         <div class="tf-menu-item" data-action="activate">
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -899,19 +1318,29 @@ class SuperTabSidebar {
             <line x1="8" y1="12" x2="16" y2="12"/>
           </svg>
           <span>切换到标签页</span>
+          <span class="tf-menu-shortcut">Enter</span>
         </div>
+        <div class="tf-menu-divider"></div>
         <div class="tf-menu-item" data-action="add-note">
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
             <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
             <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
           </svg>
-          <span>添加备注</span>
+          <span>${hasNote ? '编辑备注' : '添加备注'}</span>
+        </div>
+        <div class="tf-menu-item" data-action="set-alias">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/>
+            <rect x="8" y="2" width="8" height="4" rx="1" ry="1"/>
+          </svg>
+          <span>${hasAlias ? '编辑别名' : '设置别名'}</span>
         </div>
         <div class="tf-menu-item" data-action="move-to-group">
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
             <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/>
           </svg>
           <span>移动到分组</span>
+          <span class="tf-menu-shortcut">M</span>
         </div>
         <div class="tf-menu-item" data-action="copy-url">
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -919,14 +1348,65 @@ class SuperTabSidebar {
             <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/>
           </svg>
           <span>复制链接</span>
+          <span class="tf-menu-shortcut">C</span>
+        </div>
+        <div class="tf-menu-item" data-action="copy-title">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+            <polyline points="14 2 14 8 20 8"/>
+          </svg>
+          <span>复制标题</span>
         </div>
         <div class="tf-menu-divider"></div>
+        <div class="tf-menu-item" data-action="pin">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <line x1="12" y1="17" x2="12" y2="22"/>
+            <path d="M5 17h14v-5a7 7 0 0 0-14 0v5z"/>
+            <path d="M15.13 6.29l-3.13-3.13-3.13 3.13a4 4 0 0 0 0 5.66"/>
+          </svg>
+          <span>${tab.pinned ? '取消固定' : '固定标签页'}</span>
+          <span class="tf-menu-shortcut">P</span>
+        </div>
+        <div class="tf-menu-item" data-action="mute">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/>
+            <line x1="15.54" y1="8.46" x2="19.07" y2="12"/>
+            <line x1="19.07" y1="8.46" x2="15.54" y2="12"/>
+          </svg>
+          <span>${tab.muted ? '取消静音' : '静音标签页'}</span>
+        </div>
+        <div class="tf-menu-item" data-action="discard">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M17 18a5 5 0 0 0-10 0"/>
+            <path d="M12 14V2"/>
+            <path d="M4.93 10.93A17 17 0 0 1 12 9a17 17 0 0 1 7.07 1.93"/>
+          </svg>
+          <span>休眠标签页</span>
+        </div>
+        <div class="tf-menu-divider"></div>
+        <div class="tf-menu-item" data-action="close-others">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <line x1="18" y1="6" x2="6" y2="18"/>
+            <line x1="6" y1="6" x2="18" y2="18"/>
+            <rect x="3" y="3" width="18" height="18" rx="2" ry="2" stroke-dasharray="4 4"/>
+          </svg>
+          <span>关闭其他标签页</span>
+        </div>
+        <div class="tf-menu-item" data-action="close-to-right">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <line x1="13" y1="6" x2="18" y2="18"/>
+            <line x1="18" y1="6" x2="13" y2="18"/>
+            <line x1="12" y1="4" x2="12" y2="20"/>
+          </svg>
+          <span>关闭右侧标签页</span>
+        </div>
         <div class="tf-menu-item danger" data-action="close">
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
             <polyline points="3 6 5 6 21 6"/>
             <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>
           </svg>
           <span>关闭标签页</span>
+          <span class="tf-menu-shortcut">Del</span>
         </div>
       `;
     } else if (context.type === 'group') {
@@ -950,6 +1430,36 @@ class SuperTabSidebar {
           <span>折叠所有</span>
         </div>
         <div class="tf-menu-divider"></div>
+        <div class="tf-menu-item" data-action="select-all-tabs">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M9 11l3 3L22 4"/>
+            <path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/>
+          </svg>
+          <span>选中所有标签页</span>
+        </div>
+        <div class="tf-menu-item" data-action="close-group-tabs">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <polyline points="3 6 5 6 21 6"/>
+            <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>
+          </svg>
+          <span>关闭分组内标签页</span>
+        </div>
+        <div class="tf-menu-item" data-action="sleep-group-tabs">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M17 18a5 5 0 0 0-10 0"/>
+            <path d="M12 14V2"/>
+            <path d="M4.93 10.93A17 17 0 0 1 12 9a17 17 0 0 1 7.07 1.93"/>
+          </svg>
+          <span>休眠分组内标签页</span>
+        </div>
+        <div class="tf-menu-divider"></div>
+        <div class="tf-menu-item" data-action="rename-group">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
+            <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
+          </svg>
+          <span>重命名分组</span>
+        </div>
         <div class="tf-menu-item danger" data-action="delete">
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
             <polyline points="3 6 5 6 21 6"/>
@@ -965,12 +1475,51 @@ class SuperTabSidebar {
 
   filterTabs() {
     const query = this.searchQuery.toLowerCase().trim();
+    
+    // 初始化搜索引擎（如果尚未初始化）
+    if (!this.searchEngine && typeof TabSearchEngine !== 'undefined') {
+      this.searchEngine = new TabSearchEngine({
+        debounceDelay: 150,
+        maxHistoryItems: 20
+      });
+    }
+    
     if (!query) {
+      this.hideSearchSuggestions();
+      this.updateSearchClearButton(false);
       this.renderGroups();
       return;
     }
+    
+    this.updateSearchClearButton(true);
+    
+    // 使用增强的搜索引擎（如果可用）
+    if (this.searchEngine) {
+      this.performEnhancedSearch(query);
+    } else {
+      // 降级到原有搜索方式
+      this.performLegacySearch(query);
+    }
+  }
 
-    // Filter groups based on search query
+  performEnhancedSearch(query) {
+    // 获取所有标签页
+    const allTabs = this.getAllTabs();
+    
+    // 执行增强搜索
+    this.searchResults = this.searchEngine.search(allTabs, query, {
+      searchFields: ['title', 'alias', 'url', 'note', 'domain'],
+      sortBy: 'relevance'
+    });
+    
+    // 按分组重新组织结果
+    const filteredGroups = this.organizeResultsByGroups(this.searchResults);
+    
+    // 渲染过滤结果
+    this.renderFilteredResults(filteredGroups);
+  }
+
+  performLegacySearch(query) {
     const filteredGroups = this.groups.map(group => ({
       ...group,
       tabs: group.tabs ? group.tabs.filter(tab =>
@@ -980,15 +1529,79 @@ class SuperTabSidebar {
         (tab.note && tab.note.toLowerCase().includes(query))
       ) : []
     })).filter(group => group.tabs.length > 0);
+    
+    this.renderFilteredResults(filteredGroups);
+  }
 
-    // Render filtered results
+  getAllTabs() {
+    const tabs = [];
+    for (const group of this.groups) {
+      if (group.tabs && Array.isArray(group.tabs)) {
+        tabs.push(...group.tabs);
+      }
+    }
+    return tabs;
+  }
+
+  organizeResultsByGroups(searchResults) {
+    if (!searchResults || searchResults.length === 0) {
+      return [];
+    }
+    
+    const groupMap = new Map();
+    
+    for (const result of searchResults) {
+      const tab = result.tab;
+      const groupId = tab.groupId || 'unknown';
+      
+      if (!groupMap.has(groupId)) {
+        // 查找原始分组信息
+        const originalGroup = this.groups.find(g => g.id === groupId);
+        groupMap.set(groupId, {
+          id: groupId,
+          name: originalGroup ? originalGroup.name : (groupId.startsWith('domain_') ? this.getDomainGroupName(groupId) : '其他'),
+          type: originalGroup ? originalGroup.type : 'search',
+          tabs: []
+        });
+      }
+      
+      const group = groupMap.get(groupId);
+      group.tabs.push(tab);
+    }
+    
+    return Array.from(groupMap.values());
+  }
+
+  getDomainGroupName(groupId) {
+    if (!groupId) return '其他';
+    const parts = groupId.split('domain_');
+    return parts.length > 1 ? parts[1] : '其他';
+  }
+
+  renderFilteredResults(filteredGroups) {
     const container = this.elements[`${this.currentGroup}Groups`];
+    if (!container) return;
+    
     container.innerHTML = '';
 
     if (filteredGroups.length === 0) {
-      container.innerHTML = '<div class="tf-empty-state">🔍 未找到匹配的标签页</div>';
+      container.innerHTML = this.getSearchEmptyState();
       return;
     }
+    
+    // 显示搜索结果统计
+    const totalResults = filteredGroups.reduce((sum, g) => sum + (g.tabs ? g.tabs.length : 0), 0);
+    const statsHtml = `
+      <div class="tf-search-stats">
+        <span class="tf-search-results-count">
+          🔍 找到 ${totalResults} 个匹配的标签页
+        </span>
+      </div>
+    `;
+    
+    const statsContainer = document.createElement('div');
+    statsContainer.innerHTML = statsHtml;
+    container.appendChild(statsContainer);
 
     filteredGroups.forEach(group => {
       const groupElement = document.createElement('group-item');
@@ -998,6 +1611,356 @@ class SuperTabSidebar {
       this.bindGroupElementEvents(groupElement);
       container.appendChild(groupElement);
     });
+  }
+
+  getSearchEmptyState() {
+    const query = this.searchQuery || '';
+    return `
+      <div class="tf-empty-state">
+        <div class="tf-empty-icon">🔍</div>
+        <div class="tf-empty-title">未找到匹配的标签页</div>
+        <div class="tf-empty-subtitle">没有包含 "${this.escapeHtml(query)}" 的标签页</div>
+        <div class="tf-empty-tips">
+          <p>💡 提示：</p>
+          <ul>
+            <li>尝试使用更短的关键词</li>
+            <li>使用引号进行精确匹配，如 "GitHub"</li>
+            <li>使用 field:value 限定字段，如 title:GitHub</li>
+          </ul>
+        </div>
+      </div>
+    `;
+  }
+
+  escapeHtml(text) {
+    if (!text) return '';
+    const div = document.createElement('div');
+    div.textContent = text;
+    return div.innerHTML;
+  }
+
+  // ========== 搜索增强方法 ==========
+
+  handleSearchInput(query) {
+    this.searchQuery = query;
+    
+    // 更新清除按钮状态
+    this.updateSearchClearButton(query && query.length > 0);
+    
+    // 如果有输入内容，显示搜索建议
+    if (query && query.length > 0) {
+      this.showSearchSuggestions();
+    }
+    
+    // 执行过滤（防抖处理）
+    if (this.searchEngine) {
+      this.searchEngine.debouncedSearch(
+        (results, q) => this.onSearchComplete(results, q),
+        this.getAllTabs(),
+        query
+      );
+    } else {
+      this.filterTabs();
+    }
+  }
+
+  onSearchComplete(results, query) {
+    // 只有当查询仍然匹配时才更新结果
+    if (query === this.searchQuery) {
+      this.searchResults = results;
+      this.filterTabs();
+    }
+  }
+
+  updateSearchClearButton(show) {
+    if (!this.elements.searchClearBtn) return;
+    
+    if (show) {
+      this.elements.searchClearBtn.classList.remove('tf-hidden');
+    } else {
+      this.elements.searchClearBtn.classList.add('tf-hidden');
+    }
+  }
+
+  clearSearch() {
+    this.searchQuery = '';
+    if (this.elements.searchInput) {
+      this.elements.searchInput.value = '';
+    }
+    this.hideSearchSuggestions();
+    this.updateSearchClearButton(false);
+    this.searchResults = [];
+    this.renderGroups();
+    
+    if (this.elements.searchInput) {
+      this.elements.searchInput.focus();
+    }
+  }
+
+  showSearchSuggestions() {
+    if (!this.elements.searchSuggestions || !this.elements.searchSuggestionsList) return;
+    
+    // 初始化搜索引擎
+    if (!this.searchEngine && typeof TabSearchEngine !== 'undefined') {
+      this.searchEngine = new TabSearchEngine({
+        debounceDelay: 150,
+        maxHistoryItems: 20
+      });
+    }
+    
+    if (!this.searchEngine) {
+      return;
+    }
+    
+    // 获取建议
+    const suggestions = this.searchEngine.getSearchSuggestions(
+      this.searchQuery || '',
+      this.getAllTabs()
+    );
+    
+    if (suggestions.length === 0 && (!this.searchQuery || this.searchQuery.trim() === '')) {
+      // 如果没有输入，显示历史记录
+      const history = this.searchEngine.getSearchHistory(8);
+      if (history.length > 0) {
+        this.renderSearchHistory(history);
+        this.elements.searchSuggestions.classList.remove('tf-hidden');
+      } else {
+        this.hideSearchSuggestions();
+      }
+      return;
+    }
+    
+    if (suggestions.length === 0) {
+      this.hideSearchSuggestions();
+      return;
+    }
+    
+    this.renderSearchSuggestions(suggestions);
+    this.elements.searchSuggestions.classList.remove('tf-hidden');
+  }
+
+  renderSearchHistory(history) {
+    if (!this.elements.searchSuggestionsList) return;
+    
+    // 显示清除历史按钮
+    if (this.elements.clearHistoryBtn && history.length > 0) {
+      this.elements.clearHistoryBtn.classList.remove('tf-hidden');
+    }
+    
+    this.elements.searchSuggestionsList.innerHTML = history.map((item, index) => `
+      <div class="tf-search-suggestion-item" 
+           data-index="${index}" 
+           data-query="${this.escapeHtml(item.query)}"
+           data-type="history">
+        <span class="tf-suggestion-icon">🕐</span>
+        <span class="tf-suggestion-text">${this.escapeHtml(item.query)}</span>
+        <span class="tf-suggestion-meta">${this.formatTimestamp(item.timestamp)}</span>
+      </div>
+    `).join('');
+    
+    this.bindSuggestionEvents();
+  }
+
+  renderSearchSuggestions(suggestions) {
+    if (!this.elements.searchSuggestionsList) return;
+    
+    // 隐藏清除历史按钮（当有输入时）
+    if (this.elements.clearHistoryBtn) {
+      this.elements.clearHistoryBtn.classList.add('tf-hidden');
+    }
+    
+    this.elements.searchSuggestionsList.innerHTML = suggestions.map((suggestion, index) => {
+      const icon = this.getSuggestionIcon(suggestion.type);
+      const label = this.highlightSuggestionText(suggestion.label, this.searchQuery);
+      
+      return `
+        <div class="tf-search-suggestion-item" 
+             data-index="${index}" 
+             data-query="${this.escapeHtml(suggestion.query)}"
+             data-type="${suggestion.type}">
+          <span class="tf-suggestion-icon">${icon}</span>
+          <span class="tf-suggestion-text">${label}</span>
+          <span class="tf-suggestion-type">${this.getSuggestionTypeLabel(suggestion.type)}</span>
+        </div>
+      `;
+    }).join('');
+    
+    this.bindSuggestionEvents();
+  }
+
+  getSuggestionIcon(type) {
+    const icons = {
+      'history': '🕐',
+      'title': '📄',
+      'domain': '🌐',
+      'note': '📝',
+      'url': '🔗'
+    };
+    return icons[type] || '🔍';
+  }
+
+  getSuggestionTypeLabel(type) {
+    const labels = {
+      'history': '历史',
+      'title': '标题',
+      'domain': '域名',
+      'note': '备注',
+      'url': 'URL'
+    };
+    return labels[type] || '搜索';
+  }
+
+  highlightSuggestionText(text, query) {
+    if (!query || query.trim() === '') {
+      return this.escapeHtml(text);
+    }
+    
+    const lowerText = text.toLowerCase();
+    const lowerQuery = query.toLowerCase();
+    
+    const index = lowerText.indexOf(lowerQuery);
+    if (index === -1) {
+      return this.escapeHtml(text);
+    }
+    
+    const before = text.substring(0, index);
+    const match = text.substring(index, index + query.length);
+    const after = text.substring(index + query.length);
+    
+    return `${this.escapeHtml(before)}<span class="tf-suggestion-highlight">${this.escapeHtml(match)}</span>${this.escapeHtml(after)}`;
+  }
+
+  formatTimestamp(timestamp) {
+    const now = Date.now();
+    const diff = now - timestamp;
+    
+    const minutes = Math.floor(diff / 60000);
+    const hours = Math.floor(diff / 3600000);
+    const days = Math.floor(diff / 86400000);
+    
+    if (minutes < 1) return '刚刚';
+    if (minutes < 60) return `${minutes}分钟前`;
+    if (hours < 24) return `${hours}小时前`;
+    if (days < 7) return `${days}天前`;
+    
+    const date = new Date(timestamp);
+    return `${date.getMonth() + 1}/${date.getDate()}`;
+  }
+
+  bindSuggestionEvents() {
+    if (!this.elements.searchSuggestionsList) return;
+    
+    const items = this.elements.searchSuggestionsList.querySelectorAll('.tf-search-suggestion-item');
+    items.forEach(item => {
+      item.addEventListener('click', () => {
+        const query = item.dataset.query;
+        if (query) {
+          this.applySuggestion(query);
+        }
+      });
+      
+      item.addEventListener('mouseenter', () => {
+        items.forEach(i => i.classList.remove('tf-suggestion-active'));
+        item.classList.add('tf-suggestion-active');
+      });
+    });
+  }
+
+  applySuggestion(query) {
+    if (!query) return;
+    
+    this.searchQuery = query;
+    if (this.elements.searchInput) {
+      this.elements.searchInput.value = query;
+    }
+    
+    this.hideSearchSuggestions();
+    this.filterTabs();
+  }
+
+  hideSearchSuggestions() {
+    if (this.elements.searchSuggestions) {
+      this.elements.searchSuggestions.classList.add('tf-hidden');
+    }
+  }
+
+  handleSearchKeyDown(e) {
+    const suggestionsList = this.elements.searchSuggestionsList;
+    const suggestions = suggestionsList ? 
+      suggestionsList.querySelectorAll('.tf-search-suggestion-item') : [];
+    
+    if (!suggestions || suggestions.length === 0) {
+      if (e.key === 'Escape') {
+        this.clearSearch();
+      }
+      return;
+    }
+    
+    let activeIndex = -1;
+    suggestions.forEach((item, index) => {
+      if (item.classList.contains('tf-suggestion-active')) {
+        activeIndex = index;
+      }
+    });
+    
+    switch (e.key) {
+      case 'ArrowDown':
+        e.preventDefault();
+        suggestions.forEach(item => item.classList.remove('tf-suggestion-active'));
+        if (activeIndex < suggestions.length - 1) {
+          suggestions[activeIndex + 1].classList.add('tf-suggestion-active');
+        } else {
+          suggestions[0].classList.add('tf-suggestion-active');
+        }
+        break;
+        
+      case 'ArrowUp':
+        e.preventDefault();
+        suggestions.forEach(item => item.classList.remove('tf-suggestion-active'));
+        if (activeIndex > 0) {
+          suggestions[activeIndex - 1].classList.add('tf-suggestion-active');
+        } else {
+          suggestions[suggestions.length - 1].classList.add('tf-suggestion-active');
+        }
+        break;
+        
+      case 'Enter':
+        e.preventDefault();
+        const activeItem = suggestionsList.querySelector('.tf-suggestion-active');
+        if (activeItem && activeItem.dataset.query) {
+          this.applySuggestion(activeItem.dataset.query);
+        } else {
+          // 如果没有选中的建议，直接使用当前输入
+          this.hideSearchSuggestions();
+          this.filterTabs();
+        }
+        break;
+        
+      case 'Escape':
+        e.preventDefault();
+        if (this.searchQuery && this.searchQuery.length > 0) {
+          this.hideSearchSuggestions();
+        } else {
+          this.clearSearch();
+        }
+        break;
+        
+      case 'Tab':
+        // Tab 键选择当前高亮的建议
+        const highlightedItem = suggestionsList.querySelector('.tf-suggestion-active');
+        if (highlightedItem && highlightedItem.dataset.query) {
+          e.preventDefault();
+          this.applySuggestion(highlightedItem.dataset.query);
+        }
+        break;
+    }
+  }
+
+  clearSearchHistory() {
+    if (this.searchEngine) {
+      this.searchEngine.clearSearchHistory();
+    }
+    this.hideSearchSuggestions();
   }
 
   updateStats() {
@@ -1264,10 +2227,476 @@ class SuperTabSidebar {
 
   updateSelectionUI() {
     const selectedCount = this.selectedTabUuids.size;
+    const totalTabs = this.getAllTabs().length;
+    const allSelected = totalTabs > 0 && selectedCount === totalTabs;
+    const someSelected = selectedCount > 0 && selectedCount < totalTabs;
+    
     this.elements.selectModeBtn.classList.toggle('active', this.selectionMode);
-    this.elements.batchFavoriteBtn.classList.toggle('tf-hidden', !this.selectionMode);
-    this.elements.batchFavoriteBtn.disabled = selectedCount === 0;
-    this.elements.batchFavoriteBtn.querySelector('span').textContent = `转收藏选中 (${selectedCount})`;
+    
+    // 更新批量操作按钮显示
+    if (this.elements.batchActions) {
+      this.elements.batchActions.classList.toggle('tf-hidden', !this.selectionMode);
+    }
+    
+    // 更新全选按钮状态
+    if (this.elements.batchSelectAllBtn) {
+      const btnSpan = this.elements.batchSelectAllBtn.querySelector('span');
+      if (btnSpan) {
+        if (allSelected) {
+          btnSpan.textContent = '取消全选';
+          this.elements.batchSelectAllBtn.classList.add('active');
+        } else {
+          btnSpan.textContent = '全选';
+          this.elements.batchSelectAllBtn.classList.remove('active');
+        }
+      }
+      
+      // 添加部分选中状态
+      if (someSelected) {
+        this.elements.batchSelectAllBtn.classList.add('partial');
+      } else {
+        this.elements.batchSelectAllBtn.classList.remove('partial');
+      }
+    }
+    
+    // 更新按钮禁用状态和计数
+    const buttonsToUpdate = [
+      { element: this.elements.batchCloseBtn, label: '关闭' },
+      { element: this.elements.batchSleepBtn, label: '休眠' },
+      { element: this.elements.batchMoveBtn, label: '移动' },
+      { element: this.elements.batchFavoriteBtn, label: '收藏' }
+    ];
+    
+    buttonsToUpdate.forEach(({ element, label }) => {
+      if (element) {
+        element.disabled = selectedCount === 0;
+        const span = element.querySelector('span');
+        if (span) {
+          span.textContent = selectedCount > 0 ? `${label} (${selectedCount})` : label;
+        }
+      }
+    });
+  }
+
+  // ========== 批量操作增强方法 ==========
+
+  toggleSelectAll() {
+    const allTabs = this.getAllTabs();
+    const totalTabs = allTabs.length;
+    const selectedCount = this.selectedTabUuids.size;
+    const allSelected = totalTabs > 0 && selectedCount === totalTabs;
+    
+    if (allSelected) {
+      // 取消全选
+      this.selectedTabUuids.clear();
+    } else {
+      // 全选
+      allTabs.forEach(tab => {
+        if (tab && tab.uuid) {
+          this.selectedTabUuids.add(tab.uuid);
+        }
+      });
+    }
+    
+    this.renderGroups();
+    this.updateSelectionUI();
+  }
+
+  async closeSelectedTabs() {
+    const tabUuids = Array.from(this.selectedTabUuids);
+    if (tabUuids.length === 0) {
+      this.showToast('请先勾选标签页', 'info');
+      return;
+    }
+    
+    const selectedTabs = this.getAllTabs().filter(tab => tabUuids.includes(tab.uuid));
+    const normalTabs = selectedTabs.filter(tab => !tab.pinned);
+    const pinnedTabs = selectedTabs.filter(tab => tab.pinned);
+    
+    // 如果有固定标签页，询问用户
+    if (pinnedTabs.length > 0) {
+      const confirmed = confirm(`您选中了 ${pinnedTabs.length} 个固定标签页，确定要关闭它们吗？\n\n将同时关闭 ${normalTabs.length} 个普通标签页。`);
+      if (!confirmed) {
+        return;
+      }
+    }
+    
+    try {
+      // 获取选中标签页的 Chrome tab ID
+      const chromeTabIds = [];
+      selectedTabs.forEach(tab => {
+        if (tab.chromeTabId !== undefined && tab.chromeTabId !== null) {
+          chromeTabIds.push(tab.chromeTabId);
+        }
+      });
+      
+      // 如果有 Chrome tab ID，直接使用 Chrome API 关闭
+      if (chromeTabIds.length > 0 && typeof chrome !== 'undefined' && chrome.tabs) {
+        await chrome.tabs.remove(chromeTabIds);
+      }
+      
+      // 通过 background 关闭标签页（包含固定标签页）
+      const response = await chrome.runtime.sendMessage({
+        action: 'closeTabs',
+        data: {
+          tabUuids: tabUuids,
+          includePinned: pinnedTabs.length > 0
+        }
+      });
+      
+      if (response?.success) {
+        const closedCount = response.closedCount || tabUuids.length;
+        this.showToast(`已关闭 ${closedCount} 个标签页`, 'success');
+        
+        // 清除选中状态
+        this.selectedTabUuids.clear();
+        
+        // 刷新数据
+        await this.loadData();
+        this.updateSelectionUI();
+      } else {
+        throw new Error(response?.error || '关闭标签页失败');
+      }
+    } catch (error) {
+      console.error('Failed to close tabs:', error);
+      this.showToast('关闭标签页失败', 'error');
+    }
+  }
+
+  async sleepSelectedTabs() {
+    const tabUuids = Array.from(this.selectedTabUuids);
+    if (tabUuids.length === 0) {
+      this.showToast('请先勾选标签页', 'info');
+      return;
+    }
+    
+    const selectedTabs = this.getAllTabs().filter(tab => tabUuids.includes(tab.uuid));
+    const activeTabId = this.getCurrentActiveTabId();
+    
+    // 过滤掉当前活动标签页（不能休眠当前活动标签页）
+    const tabsToSleep = selectedTabs.filter(tab => 
+      tab.chromeTabId !== activeTabId
+    );
+    
+    if (tabsToSleep.length === 0) {
+      this.showToast('无法休眠当前活动标签页', 'info');
+      return;
+    }
+    
+    try {
+      // 构建 tabIds 列表
+      const chromeTabIds = [];
+      tabsToSleep.forEach(tab => {
+        if (tab.chromeTabId !== undefined && tab.chromeTabId !== null) {
+          chromeTabIds.push(tab.chromeTabId);
+        }
+      });
+      
+      // 使用 Chrome API 休眠标签页（如果可用）
+      if (chromeTabIds.length > 0 && typeof chrome !== 'undefined' && chrome.tabs) {
+        // 使用 discard API 释放标签页内存
+        for (const tabId of chromeTabIds) {
+          try {
+            if (chrome.tabs.discard) {
+              await chrome.tabs.discard(tabId);
+            }
+          } catch (e) {
+            console.warn('Failed to discard tab:', e);
+          }
+        }
+      }
+      
+      // 标记标签页为休眠状态
+      const response = await chrome.runtime.sendMessage({
+        action: 'sleepTabs',
+        data: {
+          tabUuids: tabsToSleep.map(t => t.uuid)
+        }
+      });
+      
+      if (response?.success) {
+        const sleptCount = response.sleptCount || tabsToSleep.length;
+        this.showToast(`已休眠 ${sleptCount} 个标签页，释放内存`, 'success');
+        
+        // 清除选中状态
+        this.selectedTabUuids.clear();
+        
+        // 刷新数据
+        await this.loadData();
+        this.updateSelectionUI();
+      } else {
+        throw new Error(response?.error || '休眠标签页失败');
+      }
+    } catch (error) {
+      console.error('Failed to sleep tabs:', error);
+      this.showToast('休眠标签页失败', 'error');
+    }
+  }
+
+  getCurrentActiveTabId() {
+    // 获取所有标签页中当前活动的标签页
+    const allTabs = this.getAllTabs();
+    const activeTabs = allTabs.filter(tab => tab.active);
+    return activeTabs.length > 0 ? activeTabs[0].chromeTabId : null;
+  }
+
+  async showMoveTabsDialog() {
+    const tabUuids = Array.from(this.selectedTabUuids);
+    if (tabUuids.length === 0) {
+      this.showToast('请先勾选标签页', 'info');
+      return;
+    }
+    
+    try {
+      // 获取所有窗口信息
+      const response = await chrome.runtime.sendMessage({
+        action: 'listWindows'
+      });
+      
+      if (!response?.success) {
+        throw new Error(response?.error || '无法获取窗口列表');
+      }
+      
+      const windows = Array.isArray(response.data) ? response.data : [];
+      
+      if (windows.length <= 1) {
+        this.showToast('只有一个窗口，无法移动标签页', 'info');
+        return;
+      }
+      
+      // 显示窗口选择对话框
+      const targetWindow = await this.showWindowSelectionDialog(windows, tabUuids.length);
+      
+      if (targetWindow) {
+        await this.moveSelectedTabsToWindow(tabUuids, targetWindow.id);
+      }
+    } catch (error) {
+      console.error('Failed to show move dialog:', error);
+      this.showToast('移动标签页失败', 'error');
+    }
+  }
+
+  async showWindowSelectionDialog(windows, tabCount) {
+    return new Promise((resolve) => {
+      // 构建窗口选项
+      let windowListHtml = windows.map((win, index) => {
+        const tabCountInWindow = win.tabCount || 0;
+        const isCurrentWindow = win.focused;
+        const windowType = win.type === 'normal' ? '普通窗口' : win.type;
+        const activeIndicator = isCurrentWindow ? ' (当前)' : '';
+        
+        return `
+          <div class="tf-window-option ${isCurrentWindow ? 'tf-window-current' : ''}" 
+               data-window-id="${win.id}"
+               style="padding: 12px; border-bottom: 1px solid var(--tf-border-light); cursor: pointer;">
+            <div style="font-weight: 500; color: var(--tf-text-primary);">
+              窗口 ${index + 1}${activeIndicator}
+            </div>
+            <div style="font-size: 12px; color: var(--tf-text-muted); margin-top: 4px;">
+              ${tabCountInWindow} 个标签页 · ${windowType}
+            </div>
+          </div>
+        `;
+      }).join('');
+      
+      // 创建对话框
+      const dialogHtml = `
+        <div id="move-tabs-dialog" class="tf-modal" style="z-index: 10050;">
+          <div class="tf-modal-backdrop" data-action="close-move-dialog"></div>
+          <div class="tf-modal-panel" style="max-height: 400px;">
+            <div class="tf-modal-header">
+              <h2>移动 ${tabCount} 个标签页到</h2>
+              <button id="move-dialog-close-btn" class="tf-btn tf-btn-icon" type="button">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <line x1="18" y1="6" x2="6" y2="18"/>
+                  <line x1="6" y1="6" x2="18" y2="18"/>
+                </svg>
+              </button>
+            </div>
+            <div class="tf-modal-body" style="padding: 0; overflow-y: auto;">
+              ${windowListHtml}
+            </div>
+            <div class="tf-modal-footer" style="justify-content: flex-end;">
+              <button id="move-dialog-cancel-btn" class="tf-btn tf-btn-secondary" type="button">取消</button>
+            </div>
+          </div>
+        </div>
+      `;
+      
+      // 插入到文档
+      const tempDiv = document.createElement('div');
+      tempDiv.innerHTML = dialogHtml;
+      const dialog = tempDiv.firstElementChild;
+      document.body.appendChild(dialog);
+      
+      // 绑定事件
+      const closeDialog = () => {
+        dialog.remove();
+        resolve(null);
+      };
+      
+      const selectWindow = (windowId) => {
+        const targetWindow = windows.find(w => w.id === parseInt(windowId));
+        dialog.remove();
+        resolve(targetWindow);
+      };
+      
+      // 点击窗口选项
+      const windowOptions = dialog.querySelectorAll('.tf-window-option');
+      windowOptions.forEach(option => {
+        option.addEventListener('click', () => {
+          selectWindow(option.dataset.windowId);
+        });
+        
+        option.addEventListener('mouseenter', () => {
+          option.style.background = 'var(--tf-bg-hover)';
+        });
+        
+        option.addEventListener('mouseleave', () => {
+          option.style.background = '';
+        });
+      });
+      
+      // 关闭按钮
+      const closeBtn = dialog.querySelector('#move-dialog-close-btn');
+      const cancelBtn = dialog.querySelector('#move-dialog-cancel-btn');
+      const backdrop = dialog.querySelector('[data-action="close-move-dialog"]');
+      
+      if (closeBtn) closeBtn.addEventListener('click', closeDialog);
+      if (cancelBtn) cancelBtn.addEventListener('click', closeDialog);
+      if (backdrop) backdrop.addEventListener('click', closeDialog);
+      
+      // ESC 键关闭
+      const handleKeyDown = (e) => {
+        if (e.key === 'Escape') {
+          document.removeEventListener('keydown', handleKeyDown);
+          closeDialog();
+        }
+      };
+      document.addEventListener('keydown', handleKeyDown);
+    });
+  }
+
+  async moveSelectedTabsToWindow(tabUuids, targetWindowId) {
+    try {
+      const selectedTabs = this.getAllTabs().filter(tab => tabUuids.includes(tab.uuid));
+      const chromeTabIds = [];
+      
+      selectedTabs.forEach(tab => {
+        if (tab.chromeTabId !== undefined && tab.chromeTabId !== null) {
+          chromeTabIds.push(tab.chromeTabId);
+        }
+      });
+      
+      if (chromeTabIds.length === 0) {
+        throw new Error('没有可移动的标签页');
+      }
+      
+      // 使用 Chrome API 移动标签页
+      if (typeof chrome !== 'undefined' && chrome.tabs) {
+        await chrome.tabs.move(chromeTabIds, {
+          windowId: targetWindowId,
+          index: -1 // 添加到窗口末尾
+        });
+      }
+      
+      // 通知 background 更新状态
+      await chrome.runtime.sendMessage({
+        action: 'moveTabsToWindow',
+        data: {
+          tabUuids: tabUuids,
+          targetWindowId: targetWindowId
+        }
+      });
+      
+      this.showToast(`已移动 ${chromeTabIds.length} 个标签页`, 'success');
+      
+      // 清除选中状态
+      this.selectedTabUuids.clear();
+      
+      // 刷新数据
+      await this.loadData();
+      this.updateSelectionUI();
+      
+    } catch (error) {
+      console.error('Failed to move tabs:', error);
+      this.showToast('移动标签页失败: ' + error.message, 'error');
+    }
+  }
+
+  // 批量关闭其他标签页（右键菜单使用）
+  async closeOtherTabs(currentTabUuid) {
+    try {
+      const confirmed = confirm('确定要关闭除此标签页以外的所有标签页吗？');
+      if (!confirmed) return;
+      
+      const allTabs = this.getAllTabs();
+      const tabsToClose = allTabs.filter(tab => 
+        tab.uuid !== currentTabUuid && !tab.pinned
+      );
+      
+      if (tabsToClose.length === 0) {
+        this.showToast('没有需要关闭的标签页', 'info');
+        return;
+      }
+      
+      const response = await chrome.runtime.sendMessage({
+        action: 'closeTabs',
+        data: {
+          tabUuids: tabsToClose.map(t => t.uuid),
+          includePinned: false
+        }
+      });
+      
+      if (response?.success) {
+        const closedCount = response.closedCount || tabsToClose.length;
+        this.showToast(`已关闭 ${closedCount} 个标签页`, 'success');
+        await this.loadData();
+      }
+    } catch (error) {
+      console.error('Failed to close other tabs:', error);
+      this.showToast('关闭标签页失败', 'error');
+    }
+  }
+
+  // 批量关闭右侧标签页（右键菜单使用）
+  async closeTabsToRight(currentTabUuid) {
+    try {
+      const confirmed = confirm('确定要关闭此标签页右侧的所有标签页吗？');
+      if (!confirmed) return;
+      
+      const allTabs = this.getAllTabs();
+      const currentIndex = allTabs.findIndex(tab => tab.uuid === currentTabUuid);
+      
+      if (currentIndex === -1) {
+        this.showToast('无法找到当前标签页', 'error');
+        return;
+      }
+      
+      const tabsToClose = allTabs.slice(currentIndex + 1).filter(tab => !tab.pinned);
+      
+      if (tabsToClose.length === 0) {
+        this.showToast('右侧没有需要关闭的标签页', 'info');
+        return;
+      }
+      
+      const response = await chrome.runtime.sendMessage({
+        action: 'closeTabs',
+        data: {
+          tabUuids: tabsToClose.map(t => t.uuid),
+          includePinned: false
+        }
+      });
+      
+      if (response?.success) {
+        const closedCount = response.closedCount || tabsToClose.length;
+        this.showToast(`已关闭 ${closedCount} 个标签页`, 'success');
+        await this.loadData();
+      }
+    } catch (error) {
+      console.error('Failed to close tabs to right:', error);
+      this.showToast('关闭标签页失败', 'error');
+    }
   }
 
   async bookmarkSelectedTabs() {
