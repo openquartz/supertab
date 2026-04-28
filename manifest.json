@@ -17,6 +17,15 @@
     "http://*/*",
     "https://*/*"
   ],
+  "content_security_policy": {
+    "extension_pages": "script-src 'self'; object-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; base-uri 'self'; connect-src 'self' chrome-extension://*;"
+  },
+  "cross_origin_embedder_policy": {
+    "value": "require-corp"
+  },
+  "cross_origin_opener_policy": {
+    "value": "same-origin"
+  },
   "background": {
     "service_worker": "background/service-worker.js"
   },
