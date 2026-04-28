@@ -6,7 +6,9 @@
  */
 
 class SmartGroupingEngine {
-  constructor(options = {}) {
+  constructor(storageManager = null, eventBus = null, options = {}) {
+    this.storageManager = storageManager;
+    this.eventBus = eventBus;
     this.groupingEngine = new GroupingEngine();
     
     this.mlClassifier = options.mlClassifier || new MLClassifier({
@@ -15,9 +17,15 @@ class SmartGroupingEngine {
     
     this.ensembleClassifier = options.ensembleClassifier || new EnsembleClassifier();
     
+    this.behaviorTracker = options.behaviorTracker;
+    
     this.useEnsemble = options.useEnsemble !== false;
     this.enableML = options.enableML !== false;
     this.enableBehaviorLearning = options.enableBehaviorLearning !== false;
+    
+    this.useMLForDomain = options.useMLForDomain !== false;
+    this.useMLForContent = options.useMLForContent !== false;
+    this.useBehaviorData = options.useBehaviorData !== false;
     
     this.domainGroupCache = new Map();
     this.dateGroupCache = new Map();
@@ -34,6 +42,11 @@ class SmartGroupingEngine {
     };
     
     console.log('🧠 SmartGroupingEngine initialized');
+  }
+
+  async initialize() {
+    console.log('✅ SmartGroupingEngine ready');
+    return true;
   }
 
   setBehaviorTracker(behaviorTracker) {

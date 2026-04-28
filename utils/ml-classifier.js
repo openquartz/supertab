@@ -7,19 +7,41 @@
 
 class MLClassifier {
   constructor(options = {}) {
-    this.modelType = options.modelType || 'naive-bayes';
+    this.algorithm = options.algorithm || options.modelType || 'naive-bayes';
+    this.modelType = this.algorithm;
     this.storageKey = options.storageKey || 'tabflow:ml_model';
     this.vocabulary = new Map();
     this.classCounts = new Map();
     this.classWordCounts = new Map();
     this.weights = new Map();
     this.trained = false;
+    this.isTrained = false;
+    this.hasModel = false;
     this.trainingData = [];
     this.maxTrainingSamples = options.maxTrainingSamples || 1000;
     this.learningRate = options.learningRate || 0.01;
     this.regularization = options.regularization || 0.001;
+    this.enableOnlineLearning = options.enableOnlineLearning !== false;
+    this.initialized = false;
     
     console.log('🤖 MLClassifier initialized with model:', this.modelType);
+  }
+
+  async initialize() {
+    if (this.initialized) {
+      return true;
+    }
+
+    try {
+      await this.load();
+      this.initialized = true;
+      console.log('✅ MLClassifier fully initialized');
+      return true;
+    } catch (error) {
+      console.warn('⚠️ MLClassifier initialization with saved model failed, using fresh model:', error);
+      this.initialized = true;
+      return true;
+    }
   }
 
   // ========== 文本预处理 ==========
@@ -121,6 +143,8 @@ class MLClassifier {
     }
 
     this.trained = true;
+    this.isTrained = true;
+    this.hasModel = this.classCounts.size > 0;
     console.log('✅ Naive Bayes trained with', trainingData.length, 'samples');
   }
 
@@ -228,6 +252,8 @@ class MLClassifier {
     this.featureIndex = featureIndex;
     this.labels = labelList;
     this.trained = true;
+    this.isTrained = true;
+    this.hasModel = true;
 
     console.log('✅ Logistic Regression trained with', trainingData.length, 'samples');
   }
@@ -258,6 +284,8 @@ class MLClassifier {
   trainDecisionTree(trainingData, maxDepth = 5) {
     this.decisionTree = this.buildTree(trainingData, 0, maxDepth);
     this.trained = true;
+    this.isTrained = true;
+    this.hasModel = true;
     console.log('✅ Decision Tree trained with', trainingData.length, 'samples');
   }
 
@@ -580,6 +608,8 @@ class MLClassifier {
         );
         this.weights = new Map(Object.entries(modelData.weights || {}));
         this.trained = modelData.trained || false;
+        this.isTrained = this.trained;
+        this.hasModel = this.trained && this.classCounts.size > 0;
         this.trainingData = modelData.trainingData || [];
         if (modelData.featureIndex) {
           this.featureIndex = new Map(Object.entries(modelData.featureIndex));
@@ -587,7 +617,7 @@ class MLClassifier {
         this.labels = modelData.labels;
         this.decisionTree = modelData.decisionTree;
         
-        console.log('📥 ML model loaded with', this.classCounts.size, 'classes');
+        console.log('📥 ML model loaded with', this.classCounts.size, 'classes, trained:', this.isTrained);
         return true;
       }
       return false;
@@ -614,6 +644,8 @@ class MLClassifier {
     this.classWordCounts.clear();
     this.weights.clear();
     this.trained = false;
+    this.isTrained = false;
+    this.hasModel = false;
     this.trainingData = [];
     this.featureIndex = null;
     this.labels = null;

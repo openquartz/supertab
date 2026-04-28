@@ -432,6 +432,11 @@ class SceneClassifier {
     console.log('🎭 SceneClassifier initialized with', Object.keys(this.scenePatterns).length, 'scenes');
   }
 
+  async initialize() {
+    console.log('✅ SceneClassifier ready');
+    return true;
+  }
+
   // ========== 自定义场景管理 ==========
 
   addCustomScene(sceneName, config) {

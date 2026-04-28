@@ -1514,6 +1514,11 @@ class ContentTypeClassifier {
     console.log('📑 ContentTypeClassifier initialized with', Object.keys(this.contentTypePatterns).length, 'categories');
   }
 
+  async initialize() {
+    console.log('✅ ContentTypeClassifier ready');
+    return true;
+  }
+
   // ========== 自定义模式管理 ==========
 
   addCustomPattern(contentType, patterns) {

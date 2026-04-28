@@ -9,14 +9,24 @@
  */
 
 class UserBehaviorTracker {
-  constructor(storageManager, options = {}) {
+  constructor(storageManager, eventBusOrOptions = null, options = {}) {
     this.storageManager = storageManager;
-    this.storageKey = options.storageKey || 'tabflow:user_behavior';
-    this.preferencesKey = options.preferencesKey || 'tabflow:user_preferences';
     
-    this.maxHistorySize = options.maxHistorySize || 1000;
-    this.maxVisitHistory = options.maxVisitHistory || 500;
-    this.decayRate = options.decayRate || 0.001;
+    // 检测第二个参数是 eventBus 还是 options (向后兼容)
+    if (eventBusOrOptions && typeof eventBusOrOptions.on === 'function' && typeof eventBusOrOptions.emit === 'function') {
+      this.eventBus = eventBusOrOptions;
+      this.options = options;
+    } else {
+      this.eventBus = null;
+      this.options = eventBusOrOptions || {};
+    }
+    
+    this.storageKey = this.options.storageKey || 'tabflow:user_behavior';
+    this.preferencesKey = this.options.preferencesKey || 'tabflow:user_preferences';
+    
+    this.maxHistorySize = this.options.maxHistorySize || 1000;
+    this.maxVisitHistory = this.options.maxVisitHistory || 500;
+    this.decayRate = this.options.decayRate || 0.001;
     
     this.groupingHistory = [];
     this.visitHistory = [];

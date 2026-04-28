@@ -10,10 +10,17 @@
  */
 
 class SceneGrouper {
-  constructor(options = {}) {
+  constructor(storageManager = null, eventBus = null, options = {}) {
+    this.storageManager = storageManager;
+    this.eventBus = eventBus;
+    
     this.contentTypeClassifier = options.contentTypeClassifier || new ContentTypeClassifier();
     this.sceneClassifier = options.sceneClassifier || new SceneClassifier();
     this.ruleEngine = options.ruleEngine || new RuleEngine();
+    
+    this.enableKeywordRules = options.enableKeywordRules !== false;
+    this.enableContentTypes = options.enableContentTypes !== false;
+    this.enableScenes = options.enableScenes !== false;
     
     this.keywordRules = new Map();
     this.groupingModes = options.groupingModes || {
@@ -23,12 +30,20 @@ class SceneGrouper {
       custom: true
     };
     
+    const defaultPriority = options.defaultGroupingPriority || ['keyword', 'custom', 'content', 'scene'];
     this.groupingPriorities = options.groupingPriorities || {
       keyword: 4,
       custom: 3,
       content: 2,
       scene: 1
     };
+    
+    for (let i = 0; i < defaultPriority.length; i++) {
+      const mode = defaultPriority[i];
+      if (this.groupingPriorities[mode] !== undefined) {
+        this.groupingPriorities[mode] = defaultPriority.length - i;
+      }
+    }
     
     this.customGroupWeights = new Map();
     this.initialized = false;
