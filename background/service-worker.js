@@ -8,6 +8,17 @@ importScripts('../utils/rule-engine.js');
 importScripts('../utils/rule-manager.js');
 importScripts('./auto-grouper.js');
 
+// New modules for enhanced functionality
+importScripts('../utils/ml-classifier.js');
+importScripts('../utils/user-behavior-tracker.js');
+importScripts('../utils/smart-grouping-engine.js');
+importScripts('../utils/content-type-classifier.js');
+importScripts('../utils/scene-classifier.js');
+importScripts('../utils/scene-grouper.js');
+importScripts('../utils/group-cache-manager.js');
+importScripts('../utils/sync-manager.js');
+importScripts('../utils/multi-window-sync.js');
+
 class SuperTabServiceWorker {
   constructor() {
     this.eventBus = new EventBus();
@@ -17,6 +28,18 @@ class SuperTabServiceWorker {
     this.ruleEngine = null;
     this.ruleManager = null;
     this.autoGrouper = null;
+    
+    // New module instances
+    this.mlClassifier = null;
+    this.userBehaviorTracker = null;
+    this.smartGroupingEngine = null;
+    this.contentTypeClassifier = null;
+    this.sceneClassifier = null;
+    this.sceneGrouper = null;
+    this.groupCacheManager = null;
+    this.syncManager = null;
+    this.multiWindowSync = null;
+    
     this.initialized = false;
     this.initializationPromise = null;
     this.tabWatcher = null;
@@ -54,13 +77,80 @@ class SuperTabServiceWorker {
         this.ruleManager = this.tabManager.ruleManager || new RuleManager(this.storageManager);
         this.autoGrouper = this.tabManager.autoGrouper || new AutoGrouper(this.tabManager, this.ruleEngine, this.ruleManager);
 
+        // Initialize new ML and smart grouping modules
+        console.log('🧠 Initializing ML and smart grouping modules...');
+        
+        this.mlClassifier = new MLClassifier({
+          algorithm: 'naive-bayes',
+          learningRate: 0.1,
+          enableOnlineLearning: true
+        });
+        await this.mlClassifier.initialize();
+
+        this.userBehaviorTracker = new UserBehaviorTracker(this.storageManager, this.eventBus);
+        await this.userBehaviorTracker.initialize();
+
+        this.smartGroupingEngine = new SmartGroupingEngine(
+          this.storageManager,
+          this.eventBus,
+          {
+            mlClassifier: this.mlClassifier,
+            behaviorTracker: this.userBehaviorTracker,
+            useMLForDomain: true,
+            useMLForContent: true,
+            useBehaviorData: true
+          }
+        );
+        await this.smartGroupingEngine.initialize();
+
+        // Initialize scene-based grouping modules
+        console.log('🎬 Initializing scene-based grouping modules...');
+        
+        this.contentTypeClassifier = new ContentTypeClassifier();
+        await this.contentTypeClassifier.initialize();
+
+        this.sceneClassifier = new SceneClassifier();
+        await this.sceneClassifier.initialize();
+
+        this.sceneGrouper = new SceneGrouper(
+          this.storageManager,
+          this.eventBus,
+          {
+            contentTypeClassifier: this.contentTypeClassifier,
+            sceneClassifier: this.sceneClassifier,
+            enableKeywordRules: true,
+            enableContentTypes: true,
+            enableScenes: true,
+            defaultGroupingPriority: ['keyword', 'custom', 'content', 'scene']
+          }
+        );
+        await this.sceneGrouper.initialize();
+
+        // Initialize cache and sync modules
+        console.log('💾 Initializing cache and sync modules...');
+        
+        this.groupCacheManager = new GroupCacheManager(this.storageManager, this.eventBus);
+        await this.groupCacheManager.initialize();
+
+        this.syncManager = new SyncManager(this.storageManager, this.eventBus);
+        await this.syncManager.initialize();
+
+        this.multiWindowSync = new MultiWindowSync(this.storageManager, this.eventBus);
+        await this.multiWindowSync.initialize();
+
+        // Setup event connections between modules
+        this.setupModuleInterconnections();
+
         this.setupDataSyncEvents();
 
         this.initialized = true;
-        console.log('✅ SuperTab Service Worker initialized successfully');
+        console.log('✅ SuperTab Service Worker initialized successfully with all new modules');
 
         // Perform initial tab sync
         await this.performInitialSync();
+
+        // Train ML model from existing data
+        await this.trainFromExistingData();
       } catch (error) {
         console.error('❌ Failed to initialize SuperTab Service Worker:', error);
         throw error;
@@ -376,6 +466,239 @@ class SuperTabServiceWorker {
         case 'getPerformanceMetrics':
           const metrics = this.tabManager.getPerformanceMetrics();
           sendResponse({ success: true, data: metrics });
+          break;
+
+        // ========== New smart grouping actions ==========
+
+        case 'getSmartGrouping':
+          try {
+            const smartTabs = data.tabs || [];
+            const smartOptions = data.options || {};
+            const smartGroups = await this.getSmartGrouping(smartTabs, smartOptions);
+            sendResponse({ success: true, data: smartGroups });
+          } catch (error) {
+            sendResponse({ success: false, error: error.message });
+          }
+          break;
+
+        case 'getSceneGrouping':
+          try {
+            const sceneTabs = data.tabs || [];
+            const sceneOptions = data.options || {};
+            const sceneGroups = await this.getSceneGrouping(sceneTabs, sceneOptions);
+            sendResponse({ success: true, data: sceneGroups });
+          } catch (error) {
+            sendResponse({ success: false, error: error.message });
+          }
+          break;
+
+        // ========== ML classifier actions ==========
+
+        case 'predictGroupForTab':
+          try {
+            if (!data?.tab) {
+              sendResponse({ success: false, error: 'tab is required' });
+              break;
+            }
+            const prediction = await this.predictGroupForTab(data.tab);
+            sendResponse({ success: true, data: prediction });
+          } catch (error) {
+            sendResponse({ success: false, error: error.message });
+          }
+          break;
+
+        case 'learnFromUserAction':
+          try {
+            if (!data?.tabs || !Array.isArray(data.tabs) || !data?.groupName) {
+              sendResponse({ success: false, error: 'tabs array and groupName are required' });
+              break;
+            }
+            const learnResult = await this.learnFromUserAction(data.tabs, data.groupName, data.isManual !== false);
+            sendResponse(learnResult);
+            if (learnResult.success) {
+              this.scheduleSidebarRefresh('model_trained');
+            }
+          } catch (error) {
+            sendResponse({ success: false, error: error.message });
+          }
+          break;
+
+        case 'getMLStats':
+          try {
+            const mlStats = await this.getMLStats();
+            sendResponse({ success: true, data: mlStats });
+          } catch (error) {
+            sendResponse({ success: false, error: error.message });
+          }
+          break;
+
+        case 'setMLAlgorithm':
+          try {
+            if (!data?.algorithm) {
+              sendResponse({ success: false, error: 'algorithm is required' });
+              break;
+            }
+            const algoResult = await this.setMLAlgorithm(data.algorithm);
+            sendResponse(algoResult);
+          } catch (error) {
+            sendResponse({ success: false, error: error.message });
+          }
+          break;
+
+        case 'resetMLModel':
+          try {
+            const resetResult = await this.resetMLModel();
+            sendResponse(resetResult);
+          } catch (error) {
+            sendResponse({ success: false, error: error.message });
+          }
+          break;
+
+        // ========== Sync actions ==========
+
+        case 'forceSync':
+          try {
+            const syncResult = await this.forceSync();
+            sendResponse({ success: true, data: syncResult });
+            this.scheduleSidebarRefresh('sync_completed');
+          } catch (error) {
+            sendResponse({ success: false, error: error.message });
+          }
+          break;
+
+        case 'exportGroupingRules':
+          try {
+            const exportOptions = data?.options || {};
+            const exportData = await this.exportGroupingRules(exportOptions);
+            sendResponse({ success: true, data: exportData });
+          } catch (error) {
+            sendResponse({ success: false, error: error.message });
+          }
+          break;
+
+        case 'importGroupingRules':
+          try {
+            if (!data?.data) {
+              sendResponse({ success: false, error: 'import data is required' });
+              break;
+            }
+            const importOptions = data?.options || {};
+            const importResult = await this.importGroupingRules(data.data, importOptions);
+            sendResponse(importResult);
+            if (importResult.success) {
+              this.scheduleSidebarRefresh('rules_imported');
+            }
+          } catch (error) {
+            sendResponse({ success: false, error: error.message });
+          }
+          break;
+
+        // ========== Cache actions ==========
+
+        case 'invalidateCache':
+          try {
+            const invalidateResult = await this.invalidateCache();
+            sendResponse(invalidateResult);
+            this.scheduleSidebarRefresh('cache_invalidated');
+          } catch (error) {
+            sendResponse({ success: false, error: error.message });
+          }
+          break;
+
+        case 'getCacheStats':
+          try {
+            const cacheStats = await this.getCacheStats();
+            sendResponse({ success: true, data: cacheStats });
+          } catch (error) {
+            sendResponse({ success: false, error: error.message });
+          }
+          break;
+
+        // ========== Scene classifier actions ==========
+
+        case 'getContentTypes':
+          try {
+            const contentTypes = await this.getContentTypes();
+            sendResponse({ success: true, data: contentTypes });
+          } catch (error) {
+            sendResponse({ success: false, error: error.message });
+          }
+          break;
+
+        case 'getScenes':
+          try {
+            const scenes = await this.getScenes();
+            sendResponse({ success: true, data: scenes });
+          } catch (error) {
+            sendResponse({ success: false, error: error.message });
+          }
+          break;
+
+        case 'setScenePriority':
+          try {
+            if (!data?.sceneName || data?.priority == null) {
+              sendResponse({ success: false, error: 'sceneName and priority are required' });
+              break;
+            }
+            const scenePriorityResult = await this.setScenePriority(data.sceneName, data.priority);
+            sendResponse(scenePriorityResult);
+            this.scheduleSidebarRefresh('scene_priority_updated');
+          } catch (error) {
+            sendResponse({ success: false, error: error.message });
+          }
+          break;
+
+        case 'setGroupingMode':
+          try {
+            if (!data?.mode || data?.enabled == null) {
+              sendResponse({ success: false, error: 'mode and enabled are required' });
+              break;
+            }
+            const modeResult = await this.setGroupingMode(data.mode, data.enabled);
+            sendResponse(modeResult);
+            this.scheduleSidebarRefresh('grouping_mode_updated');
+          } catch (error) {
+            sendResponse({ success: false, error: error.message });
+          }
+          break;
+
+        case 'setGroupingPriority':
+          try {
+            if (!data?.mode || data?.priority == null) {
+              sendResponse({ success: false, error: 'mode and priority are required' });
+              break;
+            }
+            const priorityResult = await this.setGroupingPriority(data.mode, data.priority);
+            sendResponse(priorityResult);
+            this.scheduleSidebarRefresh('grouping_priority_updated');
+          } catch (error) {
+            sendResponse({ success: false, error: error.message });
+          }
+          break;
+
+        case 'addKeywordRule':
+          try {
+            if (!data?.rule) {
+              sendResponse({ success: false, error: 'rule is required' });
+              break;
+            }
+            const keywordResult = await this.addKeywordRule(data.rule);
+            sendResponse(keywordResult);
+            this.scheduleSidebarRefresh('keyword_rule_added');
+          } catch (error) {
+            sendResponse({ success: false, error: error.message });
+          }
+          break;
+
+        // ========== Multi-window actions ==========
+
+        case 'getMultiWindowStats':
+          try {
+            const multiWindowStats = await this.getMultiWindowStats();
+            sendResponse({ success: true, data: multiWindowStats });
+          } catch (error) {
+            sendResponse({ success: false, error: error.message });
+          }
           break;
 
         default:
@@ -774,6 +1097,331 @@ class SuperTabServiceWorker {
       console.error('Clear data error:', error);
       return false;
     }
+  }
+
+  // ========== New module helper methods ==========
+
+  setupModuleInterconnections() {
+    if (!this.eventBus) return;
+
+    // Connect ML classifier with behavior tracker
+    if (this.userBehaviorTracker && this.mlClassifier) {
+      this.userBehaviorTracker.on('training_data_ready', (data) => {
+        if (data && data.length > 0) {
+          this.mlClassifier.train(data);
+        }
+      });
+    }
+
+    // Connect multi-window sync with cache manager
+    if (this.multiWindowSync && this.groupCacheManager) {
+      this.multiWindowSync.on('remote_tab_moved', (payload) => {
+        this.groupCacheManager.handleTabMoved(
+          { id: payload.tab?.id, ...payload.tab },
+          payload.groupId
+        );
+      });
+
+      this.multiWindowSync.on('remote_group_created', (payload) => {
+        this.groupCacheManager.handleGroupCreated(payload.group);
+      });
+
+      this.multiWindowSync.on('remote_group_updated', (payload) => {
+        this.groupCacheManager.handleGroupUpdated(payload.group);
+      });
+
+      this.multiWindowSync.on('remote_group_deleted', (payload) => {
+        this.groupCacheManager.handleGroupDeleted(payload.groupId);
+      });
+    }
+
+    // Connect event bus with multi-window sync
+    this.eventBus.on('tab_created', (tabData) => {
+      if (this.multiWindowSync) {
+        this.multiWindowSync.notifyTabCreated(tabData);
+      }
+    });
+
+    this.eventBus.on('tab_removed', ({ tabId, tabData }) => {
+      if (this.multiWindowSync) {
+        this.multiWindowSync.notifyTabRemoved(tabId, tabData);
+      }
+    });
+
+    this.eventBus.on('tab_updated', (tabData) => {
+      if (this.multiWindowSync) {
+        this.multiWindowSync.notifyTabUpdated(tabData);
+      }
+    });
+
+    this.eventBus.on('tab_moved_to_group', ({ tab, groupId, oldGroupId }) => {
+      if (this.multiWindowSync) {
+        this.multiWindowSync.notifyTabMovedToGroup(tab, groupId, oldGroupId);
+      }
+    });
+
+    this.eventBus.on('group_created', (group) => {
+      if (this.multiWindowSync) {
+        this.multiWindowSync.notifyGroupCreated(group);
+      }
+    });
+
+    this.eventBus.on('group_updated', ({ group }) => {
+      if (this.multiWindowSync) {
+        this.multiWindowSync.notifyGroupUpdated(group);
+      }
+    });
+
+    this.eventBus.on('group_deleted', ({ groupId, tabIds }) => {
+      if (this.multiWindowSync) {
+        this.multiWindowSync.notifyGroupDeleted(groupId, tabIds);
+      }
+    });
+
+    console.log('🔗 Module interconnections setup complete');
+  }
+
+  async trainFromExistingData() {
+    try {
+      if (!this.userBehaviorTracker || !this.mlClassifier) {
+        console.log('⚠️ ML training modules not available, skipping training');
+        return;
+      }
+
+      console.log('🧠 Training ML model from existing data...');
+
+      const trainingData = await this.userBehaviorTracker.generateTrainingData();
+
+      if (trainingData && trainingData.length > 0) {
+        await this.mlClassifier.train(trainingData);
+        console.log(`✅ ML model trained with ${trainingData.length} samples`);
+
+        await this.mlClassifier.save();
+        console.log('💾 ML model saved to storage');
+      } else {
+        console.log('ℹ️ No training data available, using default model');
+      }
+    } catch (error) {
+      console.warn('⚠️ Failed to train ML model:', error);
+    }
+  }
+
+  // ========== Smart grouping methods ==========
+
+  async getSmartGrouping(tabs, options = {}) {
+    if (!this.smartGroupingEngine) {
+      throw new Error('Smart grouping engine not initialized');
+    }
+
+    const groupType = options.groupType || 'smart';
+    let groups;
+
+    switch (groupType) {
+      case 'domain':
+        groups = await this.smartGroupingEngine.groupByDomain(tabs, options);
+        break;
+      case 'date':
+        groups = await this.smartGroupingEngine.groupByDate(tabs, options);
+        break;
+      case 'content':
+        groups = await this.smartGroupingEngine.groupByContent(tabs, options);
+        break;
+      case 'smart':
+      default:
+        groups = await this.smartGroupingEngine.groupBySmartRules(tabs, [], options);
+        break;
+    }
+
+    return groups;
+  }
+
+  async getSceneGrouping(tabs, options = {}) {
+    if (!this.sceneGrouper) {
+      throw new Error('Scene grouper not initialized');
+    }
+
+    return await this.sceneGrouper.groupTabs(tabs, options);
+  }
+
+  // ========== ML prediction methods ==========
+
+  async predictGroupForTab(tab) {
+    if (!this.mlClassifier) {
+      throw new Error('ML classifier not initialized');
+    }
+
+    const prediction = this.mlClassifier.predict(tab);
+    return {
+      groupName: prediction.label,
+      confidence: prediction.confidence,
+      probabilities: prediction.probabilities
+    };
+  }
+
+  async learnFromUserAction(tabs, groupName, isManual = true) {
+    if (!this.userBehaviorTracker || !this.mlClassifier) {
+      return { success: false, error: 'Learning modules not available' };
+    }
+
+    // Track the user action
+    await this.userBehaviorTracker.learnManualPreference(tabs, groupName);
+
+    // Update ML model if this is a manual action
+    if (isManual && tabs.length > 0) {
+      for (const tab of tabs) {
+        await this.mlClassifier.learn(tab, groupName);
+      }
+      await this.mlClassifier.save();
+    }
+
+    return { success: true, learned: tabs.length };
+  }
+
+  // ========== Sync methods ==========
+
+  async forceSync() {
+    if (!this.syncManager) {
+      throw new Error('Sync manager not initialized');
+    }
+
+    return await this.syncManager.performSync(true);
+  }
+
+  async exportGroupingRules(options = {}) {
+    if (!this.syncManager) {
+      throw new Error('Sync manager not initialized');
+    }
+
+    return await this.syncManager.exportData(options);
+  }
+
+  async importGroupingRules(data, options = {}) {
+    if (!this.syncManager) {
+      throw new Error('Sync manager not initialized');
+    }
+
+    return await this.syncManager.importData(data, options);
+  }
+
+  // ========== Cache methods ==========
+
+  async invalidateCache() {
+    if (!this.groupCacheManager) {
+      throw new Error('Cache manager not initialized');
+    }
+
+    this.groupCacheManager.invalidateCache('manual');
+    return { success: true };
+  }
+
+  async getCacheStats() {
+    if (!this.groupCacheManager) {
+      throw new Error('Cache manager not initialized');
+    }
+
+    return this.groupCacheManager.getStats();
+  }
+
+  // ========== Scene classifier methods ==========
+
+  async getContentTypes() {
+    if (!this.contentTypeClassifier) {
+      throw new Error('Content type classifier not initialized');
+    }
+
+    return this.contentTypeClassifier.getCategories();
+  }
+
+  async getScenes() {
+    if (!this.sceneClassifier) {
+      throw new Error('Scene classifier not initialized');
+    }
+
+    return this.sceneClassifier.getScenes();
+  }
+
+  async setScenePriority(sceneName, priority) {
+    if (!this.sceneClassifier) {
+      throw new Error('Scene classifier not initialized');
+    }
+
+    this.sceneClassifier.setScenePriority(sceneName, priority);
+    return { success: true };
+  }
+
+  async setGroupingMode(mode, enabled) {
+    if (!this.sceneGrouper) {
+      throw new Error('Scene grouper not initialized');
+    }
+
+    this.sceneGrouper.setGroupingMode(mode, enabled);
+    return { success: true };
+  }
+
+  async setGroupingPriority(mode, priority) {
+    if (!this.sceneGrouper) {
+      throw new Error('Scene grouper not initialized');
+    }
+
+    this.sceneGrouper.setGroupingPriority(mode, priority);
+    return { success: true };
+  }
+
+  async addKeywordRule(rule) {
+    if (!this.sceneGrouper) {
+      throw new Error('Scene grouper not initialized');
+    }
+
+    this.sceneGrouper.addKeywordRule(rule);
+    return { success: true };
+  }
+
+  // ========== Multi-window methods ==========
+
+  async getMultiWindowStats() {
+    if (!this.multiWindowSync) {
+      throw new Error('Multi-window sync not initialized');
+    }
+
+    return this.multiWindowSync.getStats();
+  }
+
+  // ========== ML classifier methods ==========
+
+  async setMLAlgorithm(algorithm) {
+    if (!this.mlClassifier) {
+      throw new Error('ML classifier not initialized');
+    }
+
+    const validAlgorithms = ['naive-bayes', 'logistic-regression', 'decision-tree'];
+    if (!validAlgorithms.includes(algorithm)) {
+      throw new Error(`Invalid algorithm. Must be one of: ${validAlgorithms.join(', ')}`);
+    }
+
+    this.mlClassifier.algorithm = algorithm;
+    return { success: true, algorithm };
+  }
+
+  async resetMLModel() {
+    if (!this.mlClassifier) {
+      throw new Error('ML classifier not initialized');
+    }
+
+    this.mlClassifier.reset();
+    return { success: true };
+  }
+
+  async getMLStats() {
+    if (!this.mlClassifier) {
+      throw new Error('ML classifier not initialized');
+    }
+
+    return {
+      algorithm: this.mlClassifier.algorithm,
+      trainingCount: this.mlClassifier.trainingData?.length || 0,
+      isTrained: this.mlClassifier.isTrained,
+      hasModel: this.mlClassifier.hasModel
+    };
   }
 }
 
